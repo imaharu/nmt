@@ -6,11 +6,11 @@ import chainer.links as L
 import MeCab
 import re
 import time
-path = "/home/ochi/src/ASPEC/ASPEC-JE/train/train-1.txt"
-train_num = 20000
-test_num = 1000
+path_train = "/home/ochi/src/ASPEC/ASPEC-JE/train/train-1.txt"
+path_test = "/home/ochi/src/ASPEC/ASPEC-JE/test/test.txt"
+train_num = 1000
+test_num = 10
 cleaning_num = 80
-count = 0
 
 def mecab(s):
     m = MeCab.Tagger ("-Owakati")
@@ -33,11 +33,11 @@ id2wd = {}
 jlines = {}
 elines = {}
 accum_loss = 0
-with open(path,'r',encoding='utf-8') as f:
+with open(path_train,'r',encoding='utf-8') as f:
     lines_je = f.read().strip().split('\n')
     pairs = [[words for i,words in enumerate(line.split('|||')) if i > 2] for k,line in enumerate(lines_je) if k < train_num]
-    
-    for i in range(train_num): # train_num = len(pairs)
+
+    for i in range(train_num):
         ja_words = mecab(pairs[i][0])
         en_words = lowercasing(pairs[i][1])
         
@@ -65,6 +65,7 @@ with open(path,'r',encoding='utf-8') as f:
     id2wd[id] = "<eos>"
     ev = len(evocab)
 
+
 class MyMT(chainer.Chain):
     def __init__(self, jv, ev, k):
         super(MyMT, self).__init__( 
@@ -82,10 +83,10 @@ class MyMT(chainer.Chain):
             x_k = self.embedx(Variable(xp.array([wid], dtype=xp.int32)))
             h = self.H(x_k)
         x_k = self.embedx(Variable(xp.array([jvocab["<eos>"]],dtype=xp.int32)))
-        # tx = Variable(xp.array([evocab[eline[0]]], dtype=xp.int32))
+        tx = Variable(xp.array([evocab[eline[0]]], dtype=xp.int32))
         
         h = self.H(x_k)
-        
+        accum_loss = F.softmax_cross_entropy(self.W(h), tx)
         for i in range(len(eline)):
             wid = evocab[eline[i]]
             x_k = self.embedy(Variable(xp.array([wid], dtype=xp.int32)))
@@ -105,16 +106,16 @@ gpu_device = 0
 cuda.get_device(gpu_device).use()
 model.to_gpu()
 xp = cuda.cupy
-
 optimizer = optimizers.SGD()
 optimizer.setup(model)
 
+start = time.time()
 
 for epoch in range(10):
     print("epoch",epoch)
-    for i in range(test_num):
+    for i in range(train_num):
         jlnr = jlines[i].split()[::-1]
-        elnr = elines[i].split()[::-1]
+        elnr = elines[i].split()
         model.H.reset_state()
         model.cleargrads()
         loss = model(jlnr, elnr)
@@ -122,12 +123,13 @@ for epoch in range(10):
         loss.unchain_backward()
         optimizer.update()
 
-with open(path,'r',encoding='utf-8') as f:
+jlines = {}
+with open(path_test,'r',encoding='utf-8') as f:
     lines_je = f.read().strip().split('\n')
     
     pairs = [[words for i,words in enumerate(line.split('|||')) if i == 2] for k,line in enumerate(lines_je) if k < test_num]
 
-    for i in range(test_num): # test_num = len(pairs)
+    for i in range(test_num):
         ja_words = mecab(pairs[i][0])
         if len(ja_words.split()) >= cleaning_num:
             continue
@@ -137,6 +139,7 @@ with open(path,'r',encoding='utf-8') as f:
                 jvocab[ja_word] = len(jvocab)
         # listを作る
         jlines[i] = mecab(pairs[i][0])
+
 
 def mt(model, jline):
     ans_en = []
@@ -153,7 +156,7 @@ def mt(model, jline):
     wid = xp.argmax(F.softmax(model.W(h)).data[0])
     
     loop = 0
-
+    print("wid", wid)
     while(wid != evocab['<eos>']) and (loop <= 30):
         with chainer.using_config('train', False):
             x_k = model.embedx(Variable(xp.array([wid],dtype=xp.int32)))
@@ -162,17 +165,15 @@ def mt(model, jline):
         wid = int(cuda.to_cpu(wid))
         loop +=1
         ans_en.append(id2wd[wid])
-        print("id2wd[wid]",id2wd[wid])
-    print("ans_en",ans_en)
-    if wid != evocab['<eos>']:
-        print(','.join(ans_en).replace(",<eos>", ""))
+    print("ans_en", ans_en)
+    # if wid != evocab['<eos>']:
+    #     print(','.join(ans_en).replace(",<eos>", ""))
 
-start = time.time()
-for epoch in range(1):
-    for i in range(len(jlines)-1):
-        jln = jlines[i].split()
-        jlner = jln[::-1]
-        mt(model, jlner)
-print("pass")
+for i in range(len(jlines)-1):
+    jln = jlines[i].split()
+    jlner = jln[::-1]
+    print(jlner)
+    mt(model, jlner)
+
 elapsed_time = time.time() - start
 print("時間:",elapsed_time / 60.0, "分")
