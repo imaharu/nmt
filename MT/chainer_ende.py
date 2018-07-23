@@ -8,8 +8,8 @@ import re
 import time
 path_train = "/home/ochi/src/ASPEC/ASPEC-JE/train/train-1.txt"
 path_test = "/home/ochi/src/ASPEC/ASPEC-JE/test/test.txt"
-train_num = 1000
-test_num = 10
+train_num = 10000
+test_num = 100
 cleaning_num = 80
 
 def mecab(s):
@@ -77,7 +77,6 @@ class MyMT(chainer.Chain):
 
     def __call__(self, jline ,eline):
         global accum_loss
-        self.H.reset_state()
         for i in range(len(jline)):
             wid = jvocab[jline[i]]
             x_k = self.embedx(Variable(xp.array([wid], dtype=xp.int32)))
@@ -106,7 +105,7 @@ gpu_device = 0
 cuda.get_device(gpu_device).use()
 model.to_gpu()
 xp = cuda.cupy
-optimizer = optimizers.SGD()
+optimizer = optimizers.Adam()
 optimizer.setup(model)
 
 start = time.time()
@@ -119,7 +118,13 @@ for epoch in range(10):
         model.H.reset_state()
         model.cleargrads()
         loss = model(jlnr, elnr)
+        # print("before_loss",loss)
         loss.backward()
+        # print("after_loss",loss)
+        # print("model.W.W",model.W.W)
+        # print("model.W.W.grad",model.W.W.grad)
+        # print("model.W.b",model.W.b)
+        # print("model.W.b.grad",model.W.b.grad)
         loss.unchain_backward()
         optimizer.update()
 
@@ -139,7 +144,8 @@ with open(path_test,'r',encoding='utf-8') as f:
                 jvocab[ja_word] = len(jvocab)
         # listを作る
         jlines[i] = mecab(pairs[i][0])
-
+        print(jlines[i])
+    print(jlines)
 
 def mt(model, jline):
     ans_en = []
@@ -159,7 +165,7 @@ def mt(model, jline):
     print("wid", wid)
     while(wid != evocab['<eos>']) and (loop <= 30):
         with chainer.using_config('train', False):
-            x_k = model.embedx(Variable(xp.array([wid],dtype=xp.int32)))
+            x_k = model.embedy(Variable(xp.array([wid],dtype=xp.int32)))
         h = model.H(x_k)
         wid = xp.argmax(F.softmax(model.W(h)).data[0])
         wid = int(cuda.to_cpu(wid))
@@ -172,7 +178,6 @@ def mt(model, jline):
 for i in range(len(jlines)-1):
     jln = jlines[i].split()
     jlner = jln[::-1]
-    print(jlner)
     mt(model, jlner)
 
 elapsed_time = time.time() - start
