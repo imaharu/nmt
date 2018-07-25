@@ -16,3 +16,6 @@
 .viminfo
 .vimrc
 .wget-hsts
+smt/
+src/
+.subversion/
