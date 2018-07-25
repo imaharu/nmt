@@ -75,27 +75,29 @@ with open(path_train,'r',encoding='utf-8') as f:
 class MyMT(chainer.Chain):
     def __init__(self, jv, ev, k):
         super(MyMT, self).__init__( 
-            embed_input = L.EmbedID(jv,k),
-            embed_target = L.EmbedID(ev,k),
+            embed_input = L.EmbedID(ev,k),
+            embed_target = L.EmbedID(jv,k),
             lstm1 = L.LSTM(k,k),
-            linear1 = L.Linear(k, ev),
+            linear1 = L.Linear(k, jv),
         )
 
     def __call__(self, input_line ,target_line):
         global accum_loss
         for i in range(len(input_line)):
-            wid = target_vocab[input_line[i]]
+            wid = input_vocab[input_line[i]]
             input_k = self.embed_input(Variable(xp.array([wid], dtype=xp.int32)))
-            h = self.lstm1(x_k)
-        last_input_k = self.embed_input(Variable(xp.array([target_vocab["<eos>"]],dtype=xp.int32)))
-        tx = Variable(xp.array([input_vocab[target_line[0]]], dtype=xp.int32))
+            h = self.lstm1(input_k)
+        last_input_k = self.embed_input(Variable(xp.array([input_vocab["<eos>"]],dtype=xp.int32)))
+        tx = Variable(xp.array([input_vocab[input_line[0]]], dtype=xp.int32))
         
         h = self.lstm1(last_input_k)
+
         accum_loss = F.softmax_cross_entropy(self.linear1(h), tx)
+        
         for i in range(len(target_line)):
-            wid = input_vocab[target_line[i]]
+            wid = target_vocab[target_line[i]]
             target_k = self.embed_target(Variable(xp.array([wid], dtype=xp.int32)))
-            next_wid = input_vocab["<eos>"] if (i == len(target_line) -1) else input_vocab[target_line[i+1]]
+            next_wid = target_vocab["<eos>"] if (i == len(target_line) -1) else target_vocab[target_line[i+1]]
             tx = Variable(xp.array([next_wid], dtype=xp.int32))
             h = self.lstm1(target_k)
             
@@ -119,11 +121,11 @@ start = time.time()
 for epoch in range(1):
     print("epoch",epoch)
     for i in range(train_num):
-        jlnr = target_lines[i].split()[::-1]
-        elnr = input_lines[i].split()
+        input_line = input_lines[i].split()
+        target_line = target_lines[i].split()
         model.lstm1.reset_state()
         model.cleargrads()
-        loss = model(jlnr, elnr)
+        loss = model(input_line, target_line)
         # print("before_loss",loss)
         loss.backward()
         # print("after_loss",loss)
