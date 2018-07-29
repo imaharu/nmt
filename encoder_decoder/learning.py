@@ -6,26 +6,11 @@ import chainer.links as L
 import MeCab
 import re
 import time
-path_train = "/home/ochi/src/ASPEC/ASPEC-JE/train/train-1.txt"
-path_test = "/home/ochi/src/ASPEC/ASPEC-JE/test/test.txt"
-train_num = 1
+path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
+path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
+train_num = 100
 test_num = 10
 cleaning_num = 80
-
-def mecab(s):
-    m = MeCab.Tagger ("-Owakati")
-    s = re.sub(r"\n", "",s)
-    return m.parse(s)
-
-def lowercasing(s):
-    return s.lower()
-
-def cleaning(target_words,input_words):
-    # Trueはどちらかがcleaning_num文字以上
-    if len(target_words.split()) >= cleaning_num or len(input_words.split()) >= cleaning_num :
-        return True
-    else:
-        return False
 
 input_vocab = {}
 input_lines = {}
@@ -36,36 +21,39 @@ target_lines = {}
 translate_words = {}
 
 accum_loss = 0
-with open(path_train,'r',encoding='utf-8') as f:
-    lines_je = f.read().strip().split('\n')
-    pairs = [[words for i,words in enumerate(line.split('|||')) if i > 2] for k,line in enumerate(lines_je) if k < train_num]
 
-    for i in range(train_num):
-
-        input_words = lowercasing(pairs[i][1])
-        target_words = mecab(pairs[i][0])
-        
-        if cleaning(target_words,input_words):
-            continue
-
-        for input_word in input_words.split():
+with open(path_train_en,'r',encoding='utf-8') as f:
+    lines_en = f.read().strip().split('\n')
+    i = 0
+    for line in lines_en:
+        if i == train_num:
+            break
+        for input_word in line.split():
             if input_word not in input_vocab:
                 id = len(input_vocab)
                 input_vocab[input_word] = id
                 translate_words[id] = input_word
-
-        for target_word in target_words.split():
-            if target_word not in target_vocab:
-                target_vocab[target_word] = len(target_vocab)
-
-        input_before = pairs[i][1]
-        print("input_before", input_before)
-        input_lines[i] = lowercasing(pairs[i][1])
-        target_lines[i] = mecab(pairs[i][0])
-
+        input_lines[i] = line
+        i += 1
     input_vocab['<eos>'] = len(input_vocab)
     ev = len(input_vocab)
-    
+
+
+with open(path_train_ja,'r',encoding='utf-8') as f:
+    lines_ja = f.read().strip().split('\n')
+    i = 0
+    for line in lines_ja:
+        if i == train_num:
+            break
+        for target_word in line.split():
+            if target_word not in input_vocab:
+                id = len(target_vocab)
+                target_vocab[target_word] = id
+                translate_words[id] = target_word
+
+        target_lines[i] = line
+        i += 1
+
     id = len(target_vocab)
     target_vocab['<eos>'] = id
     translate_words[id] = "<eos>"
@@ -126,11 +114,10 @@ for epoch in range(1):
         model.lstm1.reset_state()
         model.cleargrads()
         loss = model(input_line, target_line)
-        # print("before_loss",loss)
         loss.backward()
         # print("after_loss",loss)
-        # print("model.linear1.linear1",model.linear1.linear1)
-        # print("model.linear1.linear1.grad",model.linear1.linear1.grad)
+        # print("model.linear1.W",model.linear1.W)
+        # print("model.linear1.W.grad",model.linear1.W.grad)
         # print("model.linear1.b",model.linear1.b)
         # print("model.linear1.b.grad",model.linear1.b.grad)
         loss.unchain_backward()
