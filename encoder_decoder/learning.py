@@ -1,4 +1,5 @@
 import chainer
+from chainer import serializers
 from chainer import cuda, Variable, optimizers
 from chainer import Link, Chain, ChainList
 import chainer.functions as F
@@ -8,9 +9,7 @@ import re
 import time
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
-train_num = 100
-test_num = 10
-cleaning_num = 80
+train_num = 20000
 
 input_vocab = {}
 input_lines = {}
@@ -30,9 +29,7 @@ with open(path_train_en,'r',encoding='utf-8') as f:
             break
         for input_word in line.split():
             if input_word not in input_vocab:
-                id = len(input_vocab)
-                input_vocab[input_word] = id
-                translate_words[id] = input_word
+                input_vocab[input_word] = len(input_vocab)
         input_lines[i] = line
         i += 1
     input_vocab['<eos>'] = len(input_vocab)
@@ -46,9 +43,9 @@ with open(path_train_ja,'r',encoding='utf-8') as f:
         if i == train_num:
             break
         for target_word in line.split():
-            if target_word not in input_vocab:
+            if target_word not in target_vocab:
                 id = len(target_vocab)
-                target_vocab[target_word] = id
+                target_vocab[target_word] = len(target_vocab)
                 translate_words[id] = target_word
 
         target_lines[i] = line
@@ -61,7 +58,7 @@ with open(path_train_ja,'r',encoding='utf-8') as f:
 
 
 class MyMT(chainer.Chain):
-    def __init__(self, jv, ev, k):
+    def __init__(self, ev, jv, k):
         super(MyMT, self).__init__( 
             embed_input = L.EmbedID(ev,k),
             embed_target = L.EmbedID(jv,k),
@@ -81,7 +78,7 @@ class MyMT(chainer.Chain):
         h = self.lstm1(last_input_k)
 
         accum_loss = F.softmax_cross_entropy(self.linear1(h), tx)
-        
+        # print("target_line",target_line)
         for i in range(len(target_line)):
             wid = target_vocab[target_line[i]]
             target_k = self.embed_target(Variable(xp.array([wid], dtype=xp.int32)))
@@ -115,10 +112,9 @@ for epoch in range(1):
         model.cleargrads()
         loss = model(input_line, target_line)
         loss.backward()
-        # print("after_loss",loss)
-        # print("model.linear1.W",model.linear1.W)
-        # print("model.linear1.W.grad",model.linear1.W.grad)
-        # print("model.linear1.b",model.linear1.b)
-        # print("model.linear1.b.grad",model.linear1.b.grad)
         loss.unchain_backward()
         optimizer.update()
+    outfile = "mt-" + str(epoch) + ".model"
+    serializers.save_npz(outfile, model)
+    elapsed_time = time.time() - start
+    print("時間:",elapsed_time / 60.0, "分")
