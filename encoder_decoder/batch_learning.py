@@ -10,12 +10,15 @@ import time
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
 train_num = 200
+padding_num = 60 # コーパス作成際にcleaningを60にしたため
 
 input_vocab = {}
 input_lines = {}
+input_lines_number = {}
 
 target_vocab = {}
 target_lines = {}
+target_lines_number = {}
 
 translate_words = {}
 
@@ -30,6 +33,7 @@ with open(path_train_en,'r',encoding='utf-8') as f:
         for input_word in line.split():
             if input_word not in input_vocab:
                 input_vocab[input_word] = len(input_vocab)
+        input_lines_number[i] = [input_vocab[word] for word in line.split()]
         input_lines[i] = line
         i += 1
     input_vocab['<eos>'] = len(input_vocab)
@@ -47,7 +51,7 @@ with open(path_train_ja,'r',encoding='utf-8') as f:
                 id = len(target_vocab)
                 target_vocab[target_word] = len(target_vocab)
                 translate_words[id] = target_word
-
+        target_lines_number[i] = [target_vocab[word] for word in line.split()]
         target_lines[i] = line
         i += 1
 
@@ -60,8 +64,8 @@ with open(path_train_ja,'r',encoding='utf-8') as f:
 class MyMT(chainer.Chain):
     def __init__(self, ev, jv, k):
         super(MyMT, self).__init__( 
-            embed_input = L.EmbedID(ev,k),
-            embed_target = L.EmbedID(jv,k),
+            embed_input = L.EmbedID(ev,k,ignore_label=-1),
+            embed_target = L.EmbedID(jv,k,ignore_label=-1),
             lstm1 = L.LSTM(k,k),
             linear1 = L.Linear(k, jv),
         )
@@ -73,13 +77,14 @@ class MyMT(chainer.Chain):
             wid = input_vocab[input_line[i]]
             input_k = self.embed_input(Variable(xp.array([wid], dtype=xp.int32)))
             h = self.lstm1(input_k)
+
         last_input_k = self.embed_input(Variable(xp.array([input_vocab["<eos>"]],dtype=xp.int32)))
         tx = Variable(xp.array([input_vocab[input_line[0]]], dtype=xp.int32))
         
         h = self.lstm1(last_input_k)
 
         accum_loss = F.softmax_cross_entropy(self.linear1(h), tx)
-        # print("target_line",target_line)
+
         for i in range(len(target_line)):
             wid = target_vocab[target_line[i]]
             target_k = self.embed_target(Variable(xp.array([wid], dtype=xp.int32)))
@@ -103,14 +108,19 @@ xp = cuda.cupy
 optimizer = optimizers.SGD()
 optimizer.setup(model)
 
-start = time.time()
+def padding(batch_line):
+    array_batch_line = xp.array([ batch_line ], dtype=xp.int32)
+    pad = F.pad_sequence(array_batch_line, 50, padding=-1)
+    return pad
 
+start = time.time()
 for epoch in range(1):
     print("epoch",epoch)
     indexes = xp.random.permutation(train_num)
     for i in range(0, train_num, batch_size):
-        batch_input_line = [input_lines[int(index)].split() for index in indexes[i:i+batch_size]]
-        batch_target_line = [target_lines[int(index)].split() for index in indexes[i:i+batch_size]]
+        batch_input_line = [ padding(input_lines_number[int(index)]) for index in indexes[i:i+batch_size]]
+        batch_target_line = [ padding(batch_lines_number[int(index)])for index in indexes[i:i+batch_size]]
+        
         model.lstm1.reset_state()
         model.cleargrads()
         loss = model(batch_input_line, batch_target_line)
