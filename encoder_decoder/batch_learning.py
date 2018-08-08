@@ -121,16 +121,34 @@ def padding(batch_lines):
             batch_padding = F.concat((batch_padding, k), axis=0)
     return batch_padding
 
+def reStructured(batch_input_paddings):
+    for i in range(50): # padding_num　実際は
+        for j in range(batch_size):
+            if j == 0:
+                word_line = xp.array([ batch_input_paddings[j][i].data ], dtype=xp.int32)
+            else:
+                a = xp.array([ batch_input_paddings[j][i].data ], dtype=xp.int32)
+                word_line = F.concat((word_line, a), axis=0)
+        if i == 0:
+            reStructured = xp.array([ word_line.data ], dtype=xp.int32)
+        else:
+            a = xp.array([ word_line.data ], dtype=xp.int32)
+            reStructured = F.concat((reStructured, a), axis=0)
+    return reStructured
+
 start = time.time()
 for epoch in range(1):
     print("epoch",epoch)
     indexes = xp.random.permutation(train_num)
+
     for i in range(0, train_num, batch_size):
         batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+batch_size]]
-        batch_input_padding = padding(batch_input_lines)
+        batch_input_paddings = padding(batch_input_lines)
+        input_reStructured = reStructured(batch_input_paddings)
 
         batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+batch_size]]
-        batch_target_padding = padding(batch_target_lines)
+        batch_target_paddings = padding(batch_target_lines)
+        target_reStructured = reStructured(batch_target_paddings)
 
 
         # model.lstm1.reset_state()
