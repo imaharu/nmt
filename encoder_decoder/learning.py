@@ -103,7 +103,7 @@ optimizer.setup(model)
 
 start = time.time()
 
-for epoch in range(1):
+for epoch in range(15):
     print("epoch",epoch)
     for i in range(train_num):
         input_line = input_lines[i].split()
