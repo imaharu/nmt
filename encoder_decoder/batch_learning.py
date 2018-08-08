@@ -70,25 +70,10 @@ class MyMT(chainer.Chain):
             linear1 = L.Linear(k, jv),
         )
 
-    def __call__(self, input_lines ,target_lines):
+    def __call__(self, batch_inputs ,batch_targets):
         global accum_loss
-        # print(xp.array([input_lines[0].data[0][0]], dtype=xp.int32))
-        # データの形成
 
-        print("input_lines",input_lines)
-        for i, input_line in enumerate(input_lines):
-
-            for data in input_line[i]:
-                print("data",data)
-            break
-                # print("input_line[0]",input_line[0].data)
-                # print("len",len(input_line[0]))
-            # a = xp.array([input_line.data[i][j]], dtype=xp.int32)
-            # b = xp.array([input_line.data[i][j+1]], dtype=xp.int32)
-
-            # input_batch = F.concat((a, b), axis=0)
-            # print("input_batch",input_batch)
-            # # input_batch = F.concat((xp.array([input_line[i].data[0][j]], dtype=xp.int32), xp.array([input_line[i].data[0][j+1]], dtype=xp.int32)), axis=0)
+        print("batch_inputs",batch_inputs)
 
         for i in range(len(input_line)):
             wid = input_vocab[input_line[i]]
@@ -125,36 +110,35 @@ xp = cuda.cupy
 optimizer = optimizers.SGD()
 optimizer.setup(model)
 
-def padding(batch_line):
-    array_batch_line = xp.array([ batch_line ], dtype=xp.int32)
-    pad = F.pad_sequence(array_batch_line, 50, padding=-1)
-    return pad
+def padding(batch_lines):
+    for i in range(len(batch_lines)):
+        if i == 0:
+            a1 = xp.array([ batch_lines[i] ], dtype=xp.int32)
+            batch_padding = F.pad_sequence(a1 ,50 ,-1)
+        else:
+            a1 = xp.array([ batch_lines[i] ], dtype=xp.int32)
+            k = F.pad_sequence(a1,50,-1)
+            batch_padding = F.concat((batch_padding, k), axis=0)
+    return batch_padding
 
 start = time.time()
 for epoch in range(1):
     print("epoch",epoch)
     indexes = xp.random.permutation(train_num)
     for i in range(0, train_num, batch_size):
-        batch_input_lines = [ input_lines_number[int(index)]for index in indexes[i:i+batch_size]]
-        print(batch_input_lines)
-        for i in range(len(batch_input_lines)):
-            if i == 0:
-                a2 = xp.array(batch_input_lines[i] , dtype=xp.int32)
-                b2 = xp.array(batch_input_lines[i + 1], dtype=xp.int32)
-                batch_input = F.pad_sequence([a2,b2],50,-1)
-            else:
-                a1 = xp.array([ batch_input_lines[i] ], dtype=xp.int32)
-                k = F.pad_sequence(a1,50,-1)
-                batch_input = F.concat((batch_input, k), axis=0)
-                print("batch_input", batch_input)
-        batch_target_lines = [ padding(target_lines_number[int(index)])for index in indexes[i:i+batch_size]]
-        
-        model.lstm1.reset_state()
-        model.cleargrads()
-        loss = model(batch_input_lines, batch_target_lines)
-        loss.backward()
-        loss.unchain_backward()
-        optimizer.update()
+        batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+batch_size]]
+        batch_input_padding = padding(batch_input_lines)
+
+        batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+batch_size]]
+        batch_target_padding = padding(batch_target_lines)
+
+
+        # model.lstm1.reset_state()
+        # model.cleargrads()
+        # loss = model(batch_input, batch_target)
+        # loss.backward()
+        # loss.unchain_backward()
+        # optimizer.update()
         break
     # outfile = "mt-" + str(epoch) + ".model"
     # serializers.save_npz(outfile, model)
