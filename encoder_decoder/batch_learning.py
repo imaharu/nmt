@@ -80,6 +80,11 @@ class MyMT(chainer.Chain):
             input_k = self.embed_input(sentence_words)
             h = self.lstm1(input_k)
 
+        for i in range(len(input_line)):
+            wid = input_vocab[input_line[i]]
+            input_k = self.embed_input(Variable(np.array([wid], dtype=np.int32)))
+            h = self.lstm1(input_k)
+
         last_input_k = self.embed_input(Variable(np.array([input_vocab["<eos>"]],dtype=np.int32)))
         tx = Variable(np.array([input_vocab[input_line[0]]], dtype=np.int32))
         
