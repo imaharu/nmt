@@ -74,25 +74,23 @@ class MyMT(chainer.Chain):
 
     def __call__(self, input_line ,target_line):
         global accum_loss
-        print(input_line[0])
 
-        for sentence_words in input_line:
-            input_k = self.embed_input(sentence_words)
+        for input_sentence_words in input_line:
+            input_k = self.embed_input(input_sentence_words)
+            print("input_k",input_k.shape)
             h = self.lstm1(input_k)
 
-        for i in range(len(input_line)):
-            wid = input_vocab[input_line[i]]
-            input_k = self.embed_input(Variable(np.array([wid], dtype=np.int32)))
-            h = self.lstm1(input_k)
-
-        last_input_k = self.embed_input(Variable(np.array([input_vocab["<eos>"]],dtype=np.int32)))
-        tx = Variable(np.array([input_vocab[input_line[0]]], dtype=np.int32))
+        eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size)) # < (1,10にしたい)
         
-        h = self.lstm1(last_input_k)
+        last_input_k = self.embed_input(eoses)
 
-        accum_loss = F.softmax_cross_entropy(self.linear1(h), tx)
+        h = self.lstm1(last_input_k[0])
+        accum_loss = F.softmax_cross_entropy(self.linear1(h), target_line[0])
 
-        for i in range(len(target_line)):
+        for target_sentence_words in target_line:
+            target_k = self.embed_target(target_sentence_words)
+
+        for i in range(len(target_line)):   
             wid = target_vocab[target_line[i]]
             target_k = self.embed_target(Variable(np.array([wid], dtype=np.int32)))
             next_wid = target_vocab["<eos>"] if (i == len(target_line) -1) else target_vocab[target_line[i+1]]
@@ -103,15 +101,15 @@ class MyMT(chainer.Chain):
             accum_loss = loss if accum_loss is None else accum_loss + loss
         return accum_loss
 
-demb = 64
-batch_size = 1
+demb = 32
+batch_size = 10
 model = MyMT(ev, jv, demb)
 
 # gpu_device = 0
 # cuda.get_device(gpu_device).use()
 # model.to_gpu()
 # np = cuda.cupy
-# optimizer = optimizers.Adam()
+optimizer = optimizers.Adam()
 optimizer = optimizers.SGD()
 optimizer.setup(model)
 
