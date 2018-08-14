@@ -12,7 +12,7 @@ import numpy as np
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
 train_num = 200
-padding_num = 60 # コーパス作成際にcleaningを60にしたため
+padding_num = 50 # コーパス作成際にcleaningを60にしたため
 
 input_vocab = {}
 input_lines = {}
@@ -86,6 +86,8 @@ class MyMT(chainer.Chain):
         h = self.lstm1(last_input_k[0])
         #accum_loss = F.softmax(self.linear1(h))
         # accum_loss = F.softmax_cross_entropy(self.linear1(h), target_line[0]) # eosのcross_softmax
+        target_line_not_last = target_line[:(padding_num-1)]
+        target_line_next = target_line[1:]
         for target_sentence_words in target_line:
             if accum_loss is None:
                 accum_loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words)
@@ -128,7 +130,7 @@ def padding(batch_lines):
     return batch_padding
 
 def reStructured(batch_input_paddings):
-    for i in range(50): # padding_num　実際は
+    for i in range(padding_num): # padding_num　実際は
         for j in range(batch_size):
             if j == 0:
                 word_line = np.array([ batch_input_paddings[j][i].data ], dtype=np.int32)
