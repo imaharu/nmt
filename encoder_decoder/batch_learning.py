@@ -77,7 +77,6 @@ class MyMT(chainer.Chain):
 
         for input_sentence_words in input_line:
             input_k = self.embed_input(input_sentence_words)
-            print("input_k",input_k.shape)
             h = self.lstm1(input_k)
 
         eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size)) # < (1,10にしたい)
@@ -85,20 +84,24 @@ class MyMT(chainer.Chain):
         last_input_k = self.embed_input(eoses)
 
         h = self.lstm1(last_input_k[0])
-        accum_loss = F.softmax_cross_entropy(self.linear1(h), target_line[0])
-
+        #accum_loss = F.softmax(self.linear1(h))
+        # accum_loss = F.softmax_cross_entropy(self.linear1(h), target_line[0]) # eosのcross_softmax
         for target_sentence_words in target_line:
+            if accum_loss is None:
+                accum_loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words)
+            print("accum_loss",accum_loss)
             target_k = self.embed_target(target_sentence_words)
-
-        for i in range(len(target_line)):   
-            wid = target_vocab[target_line[i]]
-            target_k = self.embed_target(Variable(np.array([wid], dtype=np.int32)))
-            next_wid = target_vocab["<eos>"] if (i == len(target_line) -1) else target_vocab[target_line[i+1]]
-            tx = Variable(np.array([next_wid], dtype=np.int32))
+            # target_k = self.embed_target(h)
             h = self.lstm1(target_k)
-            
-            loss = F.softmax_cross_entropy(self.linear1(h),tx)
-            accum_loss = loss if accum_loss is None else accum_loss + loss
+            # loss = F.softmax(self.linear1(h))
+            loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words)
+            print("loss = ",loss)
+            accum_loss += loss
+            break
+            # print("accum_loss_before",accum_loss)
+            # accum_loss = loss if accum_loss is None else accum_loss + loss
+            # print("accum_loss_after",accum_loss)
+
         return accum_loss
 
 demb = 32
@@ -109,7 +112,7 @@ model = MyMT(ev, jv, demb)
 # cuda.get_device(gpu_device).use()
 # model.to_gpu()
 # np = cuda.cupy
-optimizer = optimizers.Adam()
+
 optimizer = optimizers.SGD()
 optimizer.setup(model)
 
@@ -155,11 +158,12 @@ for epoch in range(1):
         model.lstm1.reset_state()
         model.cleargrads()
         loss = model(input_reStructured, target_reStructured)
+        
         loss.backward()
         loss.unchain_backward()
         optimizer.update()
         break
-    # outfile = "mt-" + str(epoch) + ".model"
+    # outfile = "batch_mt-" + str(epoch) + ".model"
     # serializers.save_npz(outfile, model)
     # elapsed_time = time.time() - start
     # print("時間:",elapsed_time / 60.0, "分")
