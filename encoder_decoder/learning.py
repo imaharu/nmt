@@ -7,9 +7,10 @@ import chainer.links as L
 import MeCab
 import re
 import time
+import numpy as np
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
-train_num = 20000
+train_num = 200
 
 input_vocab = {}
 input_lines = {}
@@ -70,20 +71,23 @@ class MyMT(chainer.Chain):
         global accum_loss
         for i in range(len(input_line)):
             wid = input_vocab[input_line[i]]
-            input_k = self.embed_input(Variable(xp.array([wid], dtype=xp.int32)))
+            input_k = self.embed_input(Variable(np.array([wid], dtype=np.int32)))
             h = self.lstm1(input_k)
-        last_input_k = self.embed_input(Variable(xp.array([input_vocab["<eos>"]],dtype=xp.int32)))
-        tx = Variable(xp.array([input_vocab[input_line[0]]], dtype=xp.int32))
-        
+        last_input_k = self.embed_input(Variable(np.array([input_vocab["<eos>"]],dtype=np.int32)))
+        tx = Variable(np.array([input_vocab[input_line[0]]], dtype=np.int32))
+        print("input_line[0]",input_line[0])
+        print("tx",tx)
+        print(tx.shape)
         h = self.lstm1(last_input_k)
-
+        print("self.linear1(h)",self.linear1(h))
+        print("shape",self.linear1(h).shape)
         accum_loss = F.softmax_cross_entropy(self.linear1(h), tx)
-        # print("target_line",target_line)
+
         for i in range(len(target_line)):
             wid = target_vocab[target_line[i]]
-            target_k = self.embed_target(Variable(xp.array([wid], dtype=xp.int32)))
+            target_k = self.embed_target(Variable(np.array([wid], dtype=np.int32)))
             next_wid = target_vocab["<eos>"] if (i == len(target_line) -1) else target_vocab[target_line[i+1]]
-            tx = Variable(xp.array([next_wid], dtype=xp.int32))
+            tx = Variable(np.array([next_wid], dtype=np.int32))
             h = self.lstm1(target_k)
             
             loss = F.softmax_cross_entropy(self.linear1(h),tx)
@@ -94,10 +98,10 @@ demb = 64
 batch_size = 128
 model = MyMT(ev, jv, demb)
 
-gpu_device = 0
-cuda.get_device(gpu_device).use()
-model.to_gpu()
-xp = cuda.cupy
+# gpu_device = 0
+# cuda.get_device(gpu_device).use()
+# model.to_gpu()
+# np = cuda.cupy
 optimizer = optimizers.Adam()
 optimizer.setup(model)
 
@@ -114,7 +118,7 @@ for epoch in range(15):
         loss.backward()
         loss.unchain_backward()
         optimizer.update()
-    outfile = "mt-" + str(epoch) + ".model"
-    serializers.save_npz(outfile, model)
-    elapsed_time = time.time() - start
-    print("時間:",elapsed_time / 60.0, "分")
+    # outfile = "mt-" + str(epoch) + ".model"
+    # serializers.save_npz(outfile, model)
+    # elapsed_time = time.time() - start
+    # print("時間:",elapsed_time / 60.0, "分")

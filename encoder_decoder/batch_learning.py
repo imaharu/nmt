@@ -11,7 +11,7 @@ import numpy as np
 
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
-train_num = 200
+train_num = 20
 padding_num = 50 # コーパス作成際にcleaningを60にしたため
 
 input_vocab = {}
@@ -23,8 +23,6 @@ target_lines = {}
 target_lines_number = {}
 
 translate_words = {}
-
-accum_loss = 0
 
 with open(path_train_en,'r',encoding='utf-8') as f:
     lines_en = f.read().strip().split('\n')
@@ -62,7 +60,6 @@ with open(path_train_ja,'r',encoding='utf-8') as f:
     translate_words[id] = "<eos>"
     jv = len(target_vocab)
 
-
 class MyMT(chainer.Chain):
     def __init__(self, ev, jv, k):
         super(MyMT, self).__init__( 
@@ -79,30 +76,20 @@ class MyMT(chainer.Chain):
             input_k = self.embed_input(input_sentence_words)
             h = self.lstm1(input_k)
 
-        eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size)) # < (1,10にしたい)
+        eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size))
         
         last_input_k = self.embed_input(eoses)
 
         h = self.lstm1(last_input_k[0])
-        #accum_loss = F.softmax(self.linear1(h))
-        # accum_loss = F.softmax_cross_entropy(self.linear1(h), target_line[0]) # eosのcross_softmax
         target_line_not_last = target_line[:(padding_num-1)]
         target_line_next = target_line[1:]
-        for target_sentence_words in target_line:
-            if accum_loss is None:
+        for i ,(target_sentence_words , target_sentence_words_next) in enumerate(zip(target_line_not_last, target_line_next)):
+            if i == 0:
                 accum_loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words)
-            print("accum_loss",accum_loss)
             target_k = self.embed_target(target_sentence_words)
-            # target_k = self.embed_target(h)
             h = self.lstm1(target_k)
-            # loss = F.softmax(self.linear1(h))
-            loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words)
-            print("loss = ",loss)
+            loss = F.softmax_cross_entropy(self.linear1(h), target_sentence_words_next)
             accum_loss += loss
-            break
-            # print("accum_loss_before",accum_loss)
-            # accum_loss = loss if accum_loss is None else accum_loss + loss
-            # print("accum_loss_after",accum_loss)
 
         return accum_loss
 
@@ -130,7 +117,7 @@ def padding(batch_lines):
     return batch_padding
 
 def reStructured(batch_input_paddings):
-    for i in range(padding_num): # padding_num　実際は
+    for i in range(padding_num):
         for j in range(batch_size):
             if j == 0:
                 word_line = np.array([ batch_input_paddings[j][i].data ], dtype=np.int32)
@@ -151,6 +138,10 @@ for epoch in range(1):
 
     for i in range(0, train_num, batch_size):
         batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+batch_size]]
+        print(batch_input_lines)
+        # print("input_vocab", input_vocab)
+        # print("input_vocab <eos>b", input_vocab['<eos>'])
+        break
         batch_input_paddings = padding(batch_input_lines)
         input_reStructured = reStructured(batch_input_paddings)
         batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+batch_size]]
@@ -160,7 +151,7 @@ for epoch in range(1):
         model.lstm1.reset_state()
         model.cleargrads()
         loss = model(input_reStructured, target_reStructured)
-        
+        print("loss",loss)
         loss.backward()
         loss.unchain_backward()
         optimizer.update()
