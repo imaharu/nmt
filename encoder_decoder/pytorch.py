@@ -1,12 +1,13 @@
 import chainer
-from chainer import cuda, Variable, optimizers
-import chainer.functions as F
-import chainer.links as L
+# from chainer import cuda, Variable, optimizers
+# import chainer.functions as F
+# import chainer.links as L
+import torch
+from torch import tensor as tt
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
 import torch.optim as optim
-from torch.nn.utils.rnn import pad_sequence
+from torch.nn.utils.rnn import *
 import time
 import numpy as np
 from get_train_data import *
@@ -14,7 +15,7 @@ from get_train_data import *
 input_path = "/home/ochi/src/data/train/train_clean.txt.en"
 target_path = "/home/ochi/src/data/train/train_clean.txt.ja"
 
-train_num, padding_num, demb, batch_size = 20, 50, 256, 10
+train_num, padding_num, demb, batch_size = 20, 20, 256, 20
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -25,33 +26,25 @@ ev = len(input_vocab)
 get_train_data_target(target_path, train_num, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab)
 
-
 def padding(batch_lines):
     for i in range(len(batch_lines)):
         if i == 0:
-            print(batch_lines[i])
-            a1 = torch.tensor([batch_lines[i]])
-            print(a1)
-            # a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-            batch_padding = pad_sequence(a1 ,padding_num ,-1)
-            print(batch_padding)
+            batch_padding = F.pad(tt(batch_lines[i]) , (0, padding_num - len(batch_lines[i])), mode='constant', value=-1)
         else:
-            a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-            k = pad_sequence(a1, padding_num, -1)
-            batch_padding = F.concat((batch_padding, k), axis=0)
+            k = F.pad(tt(batch_lines[i]) , (0, padding_num - len(batch_lines[i])), mode='constant', value=-1)
+            batch_padding = torch.stack((batch_padding, k), dim=0)
+            break
     return batch_padding
 
 for epoch in range(1):
     print("epoch",epoch)
     indexes = torch.randperm(train_num)
-    print(indexes)
     for i in range(0, train_num, batch_size):
         batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+batch_size]]
         for batch_input_line in batch_input_lines:
             batch_input_line.append(input_vocab['<eos>'])
         batch_input_paddings = padding(batch_input_lines)
-
-
+        print(batch_input_paddings)
 # model = Model(ev, jv, demb)
 
 # use_gpu = torch.cuda.is_available()
@@ -59,21 +52,6 @@ for epoch in range(1):
 #     print('cuda is available!')
 
 # optimizer = optim.SGD(model.parameters(), lr=0.1)
-
-# def padding(batch_lines):
-#     for i in range(len(batch_lines)):
-#         if i == 0:
-#             print(batch_lines[i])
-#             a1 = torch.tensor([batch_lines[i]])
-#             print(a1)
-#             # a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-#             batch_padding = pad_sequence(a1 ,padding_num ,-1)
-#             print(batch_padding)
-#         else:
-#             a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-#             k = pad_sequence(a1, padding_num, -1)
-#             batch_padding = F.concat((batch_padding, k), axis=0)
-#     return batch_padding
 
 # def reStructured(batch_input_paddings):
 #     for i in range(padding_num):
