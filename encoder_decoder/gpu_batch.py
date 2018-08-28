@@ -15,7 +15,7 @@ from get_train_data import *
 input_path = "/home/ochi/src/data/train/train_clean.txt.en"
 target_path = "/home/ochi/src/data/train/train_clean.txt.ja"
 
-train_num, padding_num, demb, batch_size = 20, 50, 256, 10
+train_num, padding_num, demb, batch_size = 40, 50, 256, 10
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -79,7 +79,7 @@ def padding(batch_lines):
             batch_padding = F.concat((batch_padding, k), axis=0)
     return batch_padding
 
-def reStructured(batch_input_paddings):
+def Transposed(batch_input_paddings):
     for i in range(padding_num):
         for j in range(batch_size):
             if j == 0:
@@ -88,11 +88,11 @@ def reStructured(batch_input_paddings):
                 a = cupy.array([ batch_input_paddings[j][i].data ],dtype=cupy.float32)
                 word_line = F.concat((word_line, a), axis=0)
         if i == 0:
-            reStructured = cupy.array([ word_line.data ],dtype=cupy.float32)
+            Transposed = cupy.array([ word_line.data ],dtype=cupy.float32)
         else:
             a = cupy.array([ word_line.data ],dtype=cupy.float32)
-            reStructured = F.concat((reStructured, a), axis=0)
-    return reStructured
+            Transposed = F.concat((Transposed, a), axis=0)
+    return Transposed
 
 start = time.time()
 for epoch in range(1):
@@ -104,13 +104,13 @@ for epoch in range(1):
         for batch_input_line in batch_input_lines:
             batch_input_line.append(input_vocab['<eos>'])
         batch_input_paddings = padding(batch_input_lines)
-        input_lines = reStructured(batch_input_paddings)
+        input_lines = Transposed(batch_input_paddings)
 
         batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+batch_size]]
         for batch_target_line in batch_target_lines:
             batch_target_line.append(target_vocab['<eos>'])
         batch_target_paddings = padding(batch_target_lines)
-        target_lines = reStructured(batch_target_paddings)
+        target_lines = Transposed(batch_target_paddings)
 
         # float32 > int32
         input_lines = F.cast(input_lines, cupy.int32)
