@@ -14,16 +14,11 @@ from get_train_data import *
 
 input_path = "/home/ochi/src/data/train/train_clean.txt.en"
 target_path = "/home/ochi/src/data/train/train_clean.txt.ja"
-train_num = 200
-padding_num = 50 # コーパス作成際にcleaningを50にしたため
 
-input_vocab = {}
-input_lines = {}
-input_lines_number = {}
+train_num, padding_num, demb, batch_size = 20, 50, 256, 10
 
-target_vocab = {}
-target_lines = {}
-target_lines_number = {}
+input_vocab , input_lines, input_lines_number = {}, {}, {}
+target_vocab ,target_lines ,target_lines_number = {}, {}, {}
 
 translate_words = {}
 
@@ -65,8 +60,6 @@ class MyMT(chainer.Chain):
 
         return accum_loss
 
-demb = 256
-batch_size = 10
 model = MyMT(ev, jv, demb)
 
 cuda.get_device(0).use()
