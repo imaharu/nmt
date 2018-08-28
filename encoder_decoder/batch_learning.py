@@ -11,8 +11,8 @@ import numpy as np
 
 path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
 path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
-train_num = 20
-padding_num = 50 # コーパス作成際にcleaningを60にしたため
+train_num = 20000
+padding_num = 50 # コーパス作成際にcleaningを50にしたため
 
 input_vocab = {}
 input_lines = {}
@@ -38,7 +38,6 @@ with open(path_train_en,'r',encoding='utf-8') as f:
         i += 1
     input_vocab['<eos>'] = len(input_vocab)
     ev = len(input_vocab)
-
 
 with open(path_train_ja,'r',encoding='utf-8') as f:
     lines_ja = f.read().strip().split('\n')
@@ -71,16 +70,12 @@ class MyMT(chainer.Chain):
 
     def __call__(self, input_line ,target_line):
         global accum_loss
-
         for input_sentence_words in input_line:
             input_k = self.embed_input(input_sentence_words)
             h = self.lstm1(input_k)
-
-        eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size))
-        
-        last_input_k = self.embed_input(eoses)
-
-        h = self.lstm1(last_input_k[0])
+        # eoses = F.broadcast_to(np.asarray([input_vocab["<eos>"]]), (1, batch_size))
+        # last_input_k = self.embed_input(eoses)
+        # h = self.lstm1(last_input_k[0])
         target_line_not_last = target_line[:(padding_num-1)]
         target_line_next = target_line[1:]
         for i ,(target_sentence_words , target_sentence_words_next) in enumerate(zip(target_line_not_last, target_line_next)):
@@ -93,14 +88,14 @@ class MyMT(chainer.Chain):
 
         return accum_loss
 
-demb = 32
-batch_size = 10
+demb = 256
+batch_size = 50
 model = MyMT(ev, jv, demb)
 
 # gpu_device = 0
 # cuda.get_device(gpu_device).use()
-# model.to_gpu()
-# np = cuda.cupy
+# model.to_gpu(gpu_device)
+# xp = cuda.cupy
 
 optimizer = optimizers.SGD()
 optimizer.setup(model)
@@ -109,10 +104,10 @@ def padding(batch_lines):
     for i in range(len(batch_lines)):
         if i == 0:
             a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-            batch_padding = F.pad_sequence(a1 ,50 ,-1)
+            batch_padding = F.pad_sequence(a1 ,padding_num ,-1)
         else:
             a1 = np.array([ batch_lines[i] ], dtype=np.int32)
-            k = F.pad_sequence(a1, 50, -1)
+            k = F.pad_sequence(a1, padding_num, -1)
             batch_padding = F.concat((batch_padding, k), axis=0)
     return batch_padding
 
@@ -132,19 +127,20 @@ def reStructured(batch_input_paddings):
     return reStructured
 
 start = time.time()
-for epoch in range(1):
+for epoch in range(20):
     print("epoch",epoch)
     indexes = np.random.permutation(train_num)
 
     for i in range(0, train_num, batch_size):
         batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+batch_size]]
-        print(batch_input_lines)
-        # print("input_vocab", input_vocab)
-        # print("input_vocab <eos>b", input_vocab['<eos>'])
-        break
+        for batch_input_line in batch_input_lines:
+            batch_input_line.append(input_vocab['<eos>'])
         batch_input_paddings = padding(batch_input_lines)
         input_reStructured = reStructured(batch_input_paddings)
+
         batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+batch_size]]
+        for batch_target_line in batch_target_lines:
+            batch_target_line.append(target_vocab['<eos>'])
         batch_target_paddings = padding(batch_target_lines)
         target_reStructured = reStructured(batch_target_paddings)
 
@@ -155,8 +151,7 @@ for epoch in range(1):
         loss.backward()
         loss.unchain_backward()
         optimizer.update()
-        break
-    # outfile = "batch_mt-" + str(epoch) + ".model"
-    # serializers.save_npz(outfile, model)
-    # elapsed_time = time.time() - start
-    # print("時間:",elapsed_time / 60.0, "分")
+    outfile = "batch_mt-" + str(epoch) + ".model"
+    serializers.save_npz(outfile, model)
+    elapsed_time = time.time() - start
+    print("時間:",elapsed_time / 60.0, "分")
