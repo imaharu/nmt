@@ -9,13 +9,11 @@ import numpy as np
 from get_data import *
 import torch.optim as optim
 
-train_num, padding_num, demb, batch_size = 200, 30, 128, 10
+train_num, padding_num, hidden_size, batch_size = 200, 50, 128, 10
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
 translate_words = {}
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 get_train_data_input(train_num, input_vocab, input_lines_number, input_lines)
 ev = len(input_vocab)
@@ -23,29 +21,32 @@ get_train_data_target(train_num, target_vocab, target_lines_number, target_lines
 jv = len(target_vocab)
 
 class Encoder_Decoder(nn.Module):
-    def __init__(self, input_size, output_size, dumb):
+    def __init__(self, input_size, output_size, hidden_size):
         super(Encoder_Decoder, self).__init__()
-        self.embed_input = nn.Embedding(input_size, dumb, padding_idx=-1),
-        self.embed_target = nn.Embedding(output_size, dumb, padding_idx=-1),
+        self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=-1)
+        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=-1)
 
-        self.lstm1 = nn.LSTMCell(dumb, dumb),
-        self.linear1 = nn.Linear(dumb, output_size)
+        self.lstm1 = nn.LSTMCell(hidden_size, hidden_size)
+        self.linear1 = nn.Linear(hidden_size, output_size)
+
+        self.input_size = input_size
+        self.hidden_size =  hidden_size
+        self.output_size = output_size
 
     def forward(self, input_lines ,target_lines):
         global all_loss
-        
-        print("input_lines", input_lines)
+        all_loss = 0
+        out = torch.zeros(batch_size, self.hidden_size).cuda()
+        hidden = torch.zeros(batch_size, self.hidden_size).cuda()
         for input_sentence_words in input_lines:
-            print("input_sentence_words",input_sentence_words)
-            print("type", input_sentence_words.type())
-
             input_k = self.embed_input(input_sentence_words)
-            print(input_k)
-            h = self.lstm1(input_k)
-            print(h)
+            out, hidden = self.lstm1(input_k, (out, hidden))
+            print("out", out)
+            print("hidden", hidden)
+        print("------------------------------")
         return all_loss
 
-model = Encoder_Decoder(ev, jv, demb)
+model = Encoder_Decoder(ev, jv, hidden_size)
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 device = torch.device('cuda:0')
 model = model.to(device)
@@ -70,10 +71,9 @@ for epoch in range(1):
 
         model.zero_grad()
         optimizer.zero_grad()
-
         loss = model(Transposed_input, Transposed_target)
-        loss.backward()
-        optimizer.step()
+        # loss.backward()
+        # optimizer.step()
 
     # outfile = "gpu_batch_mt-" + str(epoch) + ".model"
     # serializers.save_npz(outfile, model)
