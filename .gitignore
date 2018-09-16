@@ -19,3 +19,5 @@
 smt/
 src/
 .subversion/
+.selected_editor
+MT/
