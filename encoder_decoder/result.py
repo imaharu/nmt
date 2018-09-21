@@ -128,19 +128,3 @@ for i in range(len(test_input_lines)):
     else:
         result_file.write(' '.join(result).strip() + '\n')
 result_file.close
-
-blue_correct_ja = open("/home/ochi/src/data/blue/correct_ja.txt", 'w', encoding="utf-8")
-path_test_ja = "/home/ochi/src/data/test/test_clean.txt.ja"
-
-with open(path_test_ja,'r',encoding='utf-8') as f:
-    lines = f.read().strip().split('\n')
-    i = 0
-    for line in lines:
-        i += 1
-        if i == test_num:
-            blue_correct_ja.write(line.strip())
-            break
-        else:
-            blue_correct_ja.write(line.strip() + '\n')
-
-blue_correct_ja.close

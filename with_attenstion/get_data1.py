@@ -11,6 +11,7 @@ def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines
             input_lines_number[i] = [input_vocab[word] for word in line.split()]
             input_lines[i] = line
             i += 1
+        input_vocab['<unk>'] = len(input_vocab)
         input_vocab['<eos>'] = len(input_vocab) + 1
 
 def get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words):
@@ -28,9 +29,12 @@ def get_train_data_target(train_num, target_vocab, target_lines_number, target_l
             target_lines_number[i] = [target_vocab[word] for word in line.split()]
             target_lines[i] = line
             i += 1
-        id = len(target_vocab) + 1
+
+        id = len(target_vocab)
+        target_vocab['<unk>'] = id + 1
         target_vocab['<eos>'] = id
-        translate_words[id] = "<eos>"
+        translate_words[id] = "<unk>"
+        translate_words[id + 1] = "<eos>"
 
 def get_test_data_target(test_num, test_input_lines):
     with open("/home/ochi/src/data/test/test_clean.txt.en",'r',encoding='utf-8') as f:
