@@ -23,18 +23,20 @@ jv = len(target_vocab)
 class Encoder_Decoder(nn.Module):
     def __init__(self, input_size, output_size, hidden_size):
         super(Encoder_Decoder, self).__init__()
-        self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=0)
-        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
-
-        self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
-        self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
-        self.linear_input = nn.Linear(hidden_size, output_size)
-        self.linear_target = nn.Linear(hidden_size, output_size)
-        self.target_linear = nn.Linear(hidden_size * 2, hidden_size)
-
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        
+        self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=0)
+        self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
+        self.linear_input = nn.Linear(hidden_size, output_size)
+
+        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
+        self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
+        self.linear_target = nn.Linear(hidden_size, output_size)
+
+        self.target_linear = nn.Linear(hidden_size * 2, hidden_size)
+
 
     def forward(self, input_lines ,target_lines):
         global all_loss
@@ -65,7 +67,7 @@ class Encoder_Decoder(nn.Module):
         return accum_loss
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 device = torch.device('cuda:0')
 model = model.to(device)
 
@@ -93,8 +95,8 @@ for epoch in range(epoch_num):
         loss.backward()
         optimizer.step()
 
-    # if (epoch + 1) % 5 == 0:
-    outfile = "attention_mt-" + str(epoch + 1) + ".model"
-    torch.save(model.state_dict(), outfile)
+    if (epoch + 1) % 5 == 0:
+        outfile = "attention_mt-" + str(epoch + 1) + ".model"
+        torch.save(model.state_dict(), outfile)
     elapsed_time = time.time() - start
     print("時間:",elapsed_time / 60.0, "分")
