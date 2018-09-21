@@ -113,18 +113,3 @@ def mt(model, test_input_line):
     print("出力データ |   ", ' '.join(ans_ja))
     print("--------------------------------")
     return ans_ja
-
-result_file_ja = '/home/ochi/src/data/blue/result_ja.txt'
-result_file = open(result_file_ja, 'w', encoding="utf-8")
-
-for i in range(len(test_input_lines)):
-    print(i)
-    print("入力データ |   ", test_input_lines[i])
-    test_input_line = test_input_lines[i].split()
-    result = mt(model, test_input_line)
-
-    if i == (len(test_input_lines) - 1):
-        result_file.write(' '.join(result).strip())
-    else:
-        result_file.write(' '.join(result).strip() + '\n')
-result_file.close
