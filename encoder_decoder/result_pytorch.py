@@ -22,9 +22,10 @@ ev = len(input_vocab) + 1
 
 get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab) + 1
+print(ev)
+print(jv)
 
 get_test_data_target(test_num, output_input_lines)
-
 class Encoder_Decoder(nn.Module):
     def __init__(self, input_size, output_size, hidden_size):
         super(Encoder_Decoder, self).__init__()
@@ -34,15 +35,14 @@ class Encoder_Decoder(nn.Module):
         self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
 
-        self.linear_input = nn.Linear(hidden_size, output_size)
-        self.linear_target = nn.Linear(hidden_size, output_size)
+        self.linear = nn.Linear(hidden_size, output_size)
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("gpu_batch_mt-15.model"))
+model.load_state_dict(torch.load("encoder_decoder-15.model"))
 
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 device = torch.device('cuda:0')
@@ -59,25 +59,26 @@ def output(model, output_input_line):
         if input_vocab.get(output_input_line[i]):
             wid = torch.tensor([input_vocab[output_input_line[i]]]).cuda()
         else:
-            ## TODO:ない場合は<unk>にしたい -> 学習時点から
             wid = torch.tensor([ input_vocab["<unk>"] ]).cuda()
         input_k = model.embed_input(wid)
         hx, cx = model.lstm_input(input_k, (hx, cx) )
 
     loop = 0
-    wid = torch.tensor([ torch.argmax(F.softmax(model.linear_input(hx), dim=1).data[0]) ]).cuda()
-
-    while(int(wid) != target_vocab['<eos>']) and (loop <= 50):
+    wid = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
+    
+    while(int(wid) != target_vocab['<eos>']):
+        if loop >= 50:
+            break
         target_k = model.embed_target(wid)
         hx, cx = model.lstm_target(target_k, (hx, cx) )
         ## TODO:dimの検討
-        wid = torch.tensor([ torch.argmax(F.softmax(model.linear_target(hx), dim=1).data[0]) ]).cuda()
-        loop +=1
-        if int(wid) != target_vocab['<eos>']:
+        wid = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
+        loop += 1
+        if int(wid) != target_vocab['<eos>'] and int(wid) != 0:
             result.append(translate_words[int(wid)])
     return result
 
-result_file_ja = '/home/ochi/src/data/blue/torch_result_pytorch.txt'
+result_file_ja = '/home/ochi/src/data/blue/result_baseline.txt'
 result_file = open(result_file_ja, 'w', encoding="utf-8")
 
 ## 出力結果を得る
