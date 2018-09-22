@@ -9,7 +9,7 @@ import numpy as np
 from get_data1 import *
 import torch.optim as optim
 
-train_num, padding_num, hidden_size, batch_size = 200, 50, 256, 50
+train_num, padding_num, hidden_size, batch_size = 100, 50, 256, 50
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -21,9 +21,6 @@ ev = len(input_vocab) + 1
 
 get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab) + 1
-
-# ev 17263
-# jv 16279
 
 class Encoder_Decoder(nn.Module):
     def __init__(self, input_size, output_size, hidden_size):
@@ -40,24 +37,29 @@ class Encoder_Decoder(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = output_size
 
+    def create_mask(self, input_sentence_words):
+        mask = input_sentence_words.eq(0).unsqueeze(-1)
+        return mask
+
     def forward(self, input_lines, target_lines):
         global all_loss
-
         hx = torch.zeros(batch_size, self.hidden_size).cuda()
         cx = torch.zeros(batch_size, self.hidden_size).cuda()
+
         for input_sentence_words in input_lines:
+            before_hx = hx
             input_k = self.embed_input(input_sentence_words)
             hx, cx = self.lstm_input(input_k, (hx, cx) )
+            mask = self.create_mask(input_sentence_words)
+            hx.masked_scatter_(mask, before_hx)
+
         target_lines_not_last = target_lines[:(padding_num-1)]
         target_lines_next = target_lines[1:]
         loss = 0
         for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
-            print("target_sentence_words", target_sentence_words)
             target_k = self.embed_target(target_sentence_words)
             hx, cx = self.lstm_target(target_k, (hx, cx) )
-            print(hx)
             loss += F.cross_entropy(self.linear(hx), target_sentence_words_next)
-        # print("loss", loss)
         return loss
 
 model = Encoder_Decoder(ev, jv, hidden_size)
@@ -67,7 +69,7 @@ model = model.to(device)
 
 start = time.time()
 
-for epoch in range(1):
+for epoch in range(15):
     print("epoch",epoch)
     indexes = torch.randperm(train_num)
     for i in range(0, train_num, batch_size):
@@ -86,9 +88,9 @@ for epoch in range(1):
         loss = model(Transposed_input, Transposed_target)
         loss.backward()
         optimizer.step()
-        break
-    # if (epoch + 1) % 5 == 0:
-    #     outfile = "encoder_decoder-" + str(epoch + 1) + ".model"
-    #     torch.save(model.state_dict(), outfile)
+
+    if (epoch + 1) % 5 == 0:
+        outfile = "masked-encoder_decoder-" + str(epoch + 1) + ".model"
+        torch.save(model.state_dict(), outfile)
     elapsed_time = time.time() - start
     print("時間:",elapsed_time / 60.0, "分")
