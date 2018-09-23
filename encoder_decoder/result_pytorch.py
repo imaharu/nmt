@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch.nn.utils.rnn import *
 import time
 import numpy as np
-from get_data1 import *
+from get_data import *
 import torch.optim as optim
 
 train_num, padding_num, hidden_size, batch_size = 20000, 50, 256, 50
@@ -22,6 +22,7 @@ ev = len(input_vocab) + 1
 
 get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab) + 1
+print(target_vocab)
 print(ev)
 print(jv)
 
@@ -42,7 +43,7 @@ class Encoder_Decoder(nn.Module):
         self.output_size = output_size
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("encoder_decoder-15.model"))
+model.load_state_dict(torch.load("masked-encoder_decoder-15.model"))
 
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 device = torch.device('cuda:0')
@@ -55,7 +56,7 @@ def output(model, output_input_line):
     cx = torch.zeros(1, model.hidden_size).cuda()
 
     for i in range(len(output_input_line)):
-        ## 辞書にある場合は        
+        ## 辞書にある場合は
         if input_vocab.get(output_input_line[i]):
             wid = torch.tensor([input_vocab[output_input_line[i]]]).cuda()
         else:
@@ -64,15 +65,15 @@ def output(model, output_input_line):
         hx, cx = model.lstm_input(input_k, (hx, cx) )
 
     loop = 0
-    wid = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
+    wid = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
     
     while(int(wid) != target_vocab['<eos>']):
         if loop >= 50:
             break
         target_k = model.embed_target(wid)
         hx, cx = model.lstm_target(target_k, (hx, cx) )
-        ## TODO:dimの検討
         wid = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
+        ## TODO:dimの検討
         loop += 1
         if int(wid) != target_vocab['<eos>'] and int(wid) != 0:
             result.append(translate_words[int(wid)])
@@ -84,7 +85,7 @@ result_file = open(result_file_ja, 'w', encoding="utf-8")
 ## 出力結果を得る
 for i in range(len(output_input_lines)):
     output_input_line = output_input_lines[i].split()
-    print(output_input_line)
+    output_input_line.append("<eos>")
     result = output(model, output_input_line)
     print("出力データ {}", ' '.join(result).strip())
     if i == (len(output_input_lines) - 1):
