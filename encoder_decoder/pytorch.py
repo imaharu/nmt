@@ -9,7 +9,7 @@ import numpy as np
 from get_data import *
 import torch.optim as optim
 
-train_num, padding_num, hidden_size, batch_size = 100, 50, 256, 50
+train_num, padding_num, hidden_size, batch_size = 20000, 50, 256, 50
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -38,9 +38,7 @@ class Encoder_Decoder(nn.Module):
         self.output_size = output_size
 
     def create_mask(self, input_sentence_words):
-        mask = input_sentence_words.eq(0)
-        # mask = input_sentence_words.eq(0).unsqueeze(-1)
-        return mask
+        return torch.cat( [ input_sentence_words.unsqueeze(-1) ] * 256, 1)
 
     def forward(self, input_lines, target_lines):
         global all_loss
@@ -52,10 +50,12 @@ class Encoder_Decoder(nn.Module):
             before_cx = cx
             input_k = self.embed_input(input_sentence_words)
             hx, cx = self.lstm_input(input_k, (hx, cx) )
+
             mask = self.create_mask(input_sentence_words)
-            indices = mask.nonzero()
-            hx[indices]= before_hx[indices]
-            cx[indices] =  before_cx[indices]
+            hx = torch.where(mask == 0, before_hx, hx)
+            cx = torch.where(mask == 0, before_cx, cx)
+
+        
         target_lines_not_last = target_lines[:(padding_num-1)]
         target_lines_next = target_lines[1:]
         loss = 0
@@ -72,7 +72,7 @@ model = model.to(device)
 
 start = time.time()
 
-for epoch in range(1):
+for epoch in range(15):
     print("epoch",epoch)
     indexes = torch.randperm(train_num)
 
@@ -93,8 +93,8 @@ for epoch in range(1):
         loss = model(Transposed_input, Transposed_target)
         loss.backward()
         optimizer.step()
-    # if (epoch + 1) % 5 == 0:
-    #     outfile = "masked-encoder_decoder-" + str(epoch + 1) + ".model"
-    #     torch.save(model.state_dict(), outfile)
-    # elapsed_time = time.time() - start
-    # print("時間:",elapsed_time / 60.0, "分")
+    if (epoch + 1) % 5 == 0:
+        outfile = "masked-encoder_decoder-" + str(epoch + 1) + ".model"
+        torch.save(model.state_dict(), outfile)
+    elapsed_time = time.time() - start
+    print("時間:",elapsed_time / 60.0, "分")
