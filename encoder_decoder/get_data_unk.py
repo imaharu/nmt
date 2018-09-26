@@ -1,6 +1,5 @@
-# /home/ochi/src/data/train/train_clean.txt.en
 def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines):
-    with open("train.en",'r',encoding='utf-8') as f:
+    with open("train_unk.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
         i = 0
         for line in lines_en:
@@ -12,11 +11,10 @@ def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines
             input_lines_number[i] = [input_vocab[word] for word in line.split()]
             input_lines[i] = line
             i += 1
-        input_vocab['<unk>'] = len(input_vocab) + 1
         input_vocab['<eos>'] = len(input_vocab) + 1
-# /home/ochi/src/data/train/train_clean.txt.ja
+
 def get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words):
-    with open("train.ja",'r',encoding='utf-8') as f:
+    with open("train_unk.ja",'r',encoding='utf-8') as f:
         lines_ja = f.read().strip().split('\n')
         i = 0
         for line in lines_ja:
@@ -32,14 +30,11 @@ def get_train_data_target(train_num, target_vocab, target_lines_number, target_l
             i += 1
 
         id = len(target_vocab)
-        target_vocab['<unk>'] = len(target_vocab) + 1
-        target_vocab['<bos>'] = len(target_vocab) + 1
-        target_vocab['<eos>'] = len(target_vocab) + 1
-        translate_words[id + 1] = "<unk>"
-        translate_words[id + 2] = "<bos>"
-        translate_words[id + 3] = "<eos>"
+        target_vocab['<bos>'] = (id + 1)
+        target_vocab['<eos>'] = (id + 2)
+        translate_words[id + 1] = "<bos>"
+        translate_words[id + 2] = "<eos>"
 
-# /home/ochi/src/data/test/test_clean.txt.en
 def get_test_data_target(test_num, test_input_lines):
     with open("test.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
