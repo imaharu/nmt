@@ -10,7 +10,7 @@ from get_data import *
 import torch.optim as optim
 
 train_num, hidden_size= 20000, 256
-test_num = 2
+test_num = 1000
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -30,6 +30,8 @@ class Encoder_Decoder(nn.Module):
         super(Encoder_Decoder, self).__init__()
         self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=0)
         self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
+        self.drop_input = nn.Dropout(p=0.2)
+        self.drop_target = nn.Dropout(p=0.2)
 
         self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
@@ -41,7 +43,7 @@ class Encoder_Decoder(nn.Module):
         self.output_size = output_size
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("drop-15.model"))
+model.load_state_dict(torch.load("no-eos-15.model"))
 
 optimizer = torch.optim.Adam(model.parameters())
 device = torch.device('cuda:0')
@@ -59,6 +61,7 @@ def output(model, output_input_line):
         else:
             word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
         input_k = model.embed_input(word_id)
+        input_k = model.drop_input(input_k)
         hx, cx = model.lstm_input(input_k, (hx, cx) )
     loop = 0
     word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
@@ -67,25 +70,24 @@ def output(model, output_input_line):
         if loop >= 50:
             break
         target_k = model.embed_target(word_id)
+        target_k = model.drop_target(target_k)
         hx, cx = model.lstm_target(target_k, (hx, cx) )
         word_id = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
-        ## TODO:dimの検討
         loop += 1
         if int(word_id) != target_vocab['<eos>'] and int(word_id) != 0:
             result.append(translate_words[int(word_id)])
     return result
 
-result_file_ja = '/home/ochi/src/data/blue/drop.txt'
+result_file_ja = '/home/ochi/src/data/blue/seq2seq.txt'
 result_file = open(result_file_ja, 'w', encoding="utf-8")
 
 ## 出力結果を得る
 for i in range(len(output_input_lines)):
     output_input_line = output_input_lines[i].split()
-    output_input_line.append("<eos>")
     result = output(model, output_input_line)
     print("出力データ ", ' '.join(result).strip())
-    # if i == (len(output_input_lines) - 1):
-    #     result_file.write(' '.join(result).strip())
-    # else:
-    #     result_file.write(' '.join(result).strip() + '\n')
+    if i == (len(output_input_lines) - 1):
+        result_file.write(' '.join(result).strip())
+    else:
+        result_file.write(' '.join(result).strip() + '\n')
 result_file.close
