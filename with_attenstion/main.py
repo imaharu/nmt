@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.utils.rnn import *
 import time
-from get_data import *
+from get_data1 import *
 import torch.optim as optim
 
 train_num, padding_num, hidden_size, batch_size = 20000, 50, 256, 50
@@ -15,10 +15,10 @@ target_vocab ,target_lines ,target_lines_number = {}, {}, {}
 translate_words = {}
 
 get_train_data_input(train_num, input_vocab, input_lines_number, input_lines)
-ev = len(input_vocab)
+ev = len(input_vocab) + 1
 
 get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
-jv = len(target_vocab)
+jv = len(target_vocab) + 1
 
 class Encoder_Decoder(nn.Module):
     def __init__(self, input_size, output_size, hidden_size):

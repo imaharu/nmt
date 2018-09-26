@@ -1,130 +1,91 @@
-import chainer
-from chainer import serializers
-from chainer import cuda, Variable, optimizers
-from chainer import Link, Chain, ChainList
-import chainer.functions as F
-import chainer.links as L
+import torch
+from torch import tensor as tt
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.nn.utils.rnn import *
+import time
+import numpy as np
+from get_data import *
+import torch.optim as optim
 
-path_train_en = "/home/ochi/src/data/train/train_clean.txt.en"
-path_train_ja = "/home/ochi/src/data/train/train_clean.txt.ja"
+train_num, hidden_size= 20000, 256
+test_num = 2
 
-path_test_en = "/home/ochi/src/data/test/test_clean.txt.en"
-
-train_num = 20000
-test_num = 1000
-
-input_vocab = {}
-target_vocab = {}
-
+input_vocab , input_lines, input_lines_number = {}, {}, {}
+target_vocab ,target_lines ,target_lines_number = {}, {}, {}
+output_input_lines = {}
 translate_words = {}
 
-with open(path_train_en,'r',encoding='utf-8') as f:
-    lines_en = f.read().strip().split('\n')
-    i = 0
-    for line in lines_en:
-        if i == train_num:
-            break
-        for input_word in line.split():
-            if input_word not in input_vocab:
-                input_vocab[input_word] = len(input_vocab)
-        i += 1
-    input_vocab['<eos>'] = len(input_vocab)
-    ev = len(input_vocab)
+get_train_data_input(train_num, input_vocab, input_lines_number, input_lines)
+ev = len(input_vocab) + 1
 
-with open(path_train_ja,'r',encoding='utf-8') as f:
-    lines_ja = f.read().strip().split('\n')
-    i = 0
-    for line in lines_ja:
-        if i == train_num:
-            break
-        for target_word in line.split():
-            if target_word not in target_vocab:
-                id = len(target_vocab)
-                target_vocab[target_word] = len(target_vocab)
-                translate_words[id] = target_word
-        i += 1
+get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
+jv = len(target_vocab) + 1
 
-    id = len(target_vocab)
-    target_vocab['<eos>'] = id
-    translate_words[id] = "<eos>"
-    jv = len(target_vocab)
+get_test_data_target(test_num, output_input_lines)
 
+class Encoder_Decoder(nn.Module):
+    def __init__(self, input_size, output_size, hidden_size):
+        super(Encoder_Decoder, self).__init__()
+        self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=0)
+        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
 
-test_input_lines = {}
-with open(path_test_en,'r',encoding='utf-8') as f:
-    lines_en = f.read().strip().split('\n')
-    i = 0
-    for line in lines_en:
-        if i == test_num:
-            break
-        test_input_lines[i] = line
-        i += 1
+        self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
+        self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
 
-class MyMT(chainer.Chain):
-    def __init__(self, ev, jv, k):
-        super(MyMT, self).__init__( 
-            embed_input = L.EmbedID(ev,k),
-            embed_target = L.EmbedID(jv,k),
-            lstm1 = L.LSTM(k,k),
-            linear1 = L.Linear(k, jv),
-        )
+        self.linear = nn.Linear(hidden_size, output_size)
 
-demb = 64
-model = MyMT(ev, jv, demb)
-serializers.load_npz("mt-13.model", model)
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.output_size = output_size
 
-gpu_device = 0
-cuda.get_device(gpu_device).use()
-model.to_gpu()
-xp = cuda.cupy
-optimizer = optimizers.Adam()
-optimizer.setup(model)
+model = Encoder_Decoder(ev, jv, hidden_size)
+model.load_state_dict(torch.load("drop-15.model"))
 
-def mt(model, test_input_line):
-    ans_ja = []
-    model.lstm1.reset_state()
-    for i in range(len(test_input_line)):    
+optimizer = torch.optim.Adam(model.parameters())
+device = torch.device('cuda:0')
+model = model.to(device)
+
+def output(model, output_input_line):
+    result = []
+    hx = torch.zeros(1, model.hidden_size).cuda()
+    cx = torch.zeros(1, model.hidden_size).cuda()
+
+    for i in range(len(output_input_line)):
         ## 辞書にある場合は
-        if input_vocab.get(test_input_line[i]):
-            wid = input_vocab[test_input_line[i]]
+        if input_vocab.get(output_input_line[i]):
+            word_id = torch.tensor([input_vocab[output_input_line[i]]]).cuda()
         else:
-            wid = input_vocab[","]
-
-        with chainer.using_config('train', False):
-            input_k= model.embed_input(Variable(xp.array([wid], dtype=xp.int32)))
-        h = model.lstm1(input_k)
-    with chainer.using_config('train', False):
-        last_input_k = model.embed_input(Variable(xp.array([input_vocab["<eos>"]],dtype=xp.int32)))
-
-    h = model.lstm1(last_input_k)
-    wid = xp.argmax(F.softmax(model.linear1(h)).data[0])
-    
+            word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
+        input_k = model.embed_input(word_id)
+        hx, cx = model.lstm_input(input_k, (hx, cx) )
     loop = 0
+    word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
 
-    while(wid != target_vocab['<eos>']) and (loop <= 50):
-        with chainer.using_config('train', False):
-            target_k = model.embed_target(Variable(xp.array([wid],dtype=xp.int32)))
-        h = model.lstm1(target_k)
-        wid = xp.argmax(F.softmax(model.linear1(h)).data[0])
-        wid = int(cuda.to_cpu(wid))
-        loop +=1
-        if wid != target_vocab['<eos>']:
-            ans_ja.append(translate_words[wid])
-    print("出力データ |   ", ' '.join(ans_ja))
-    print("--------------------------------")
-    return ans_ja
+    while(int(word_id) != target_vocab['<eos>']):
+        if loop >= 50:
+            break
+        target_k = model.embed_target(word_id)
+        hx, cx = model.lstm_target(target_k, (hx, cx) )
+        word_id = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
+        ## TODO:dimの検討
+        loop += 1
+        if int(word_id) != target_vocab['<eos>'] and int(word_id) != 0:
+            result.append(translate_words[int(word_id)])
+    return result
 
-result_file_ja = '/home/ochi/src/data/blue/result_ja.txt'
+result_file_ja = '/home/ochi/src/data/blue/drop.txt'
 result_file = open(result_file_ja, 'w', encoding="utf-8")
 
-for i in range(len(test_input_lines)):
-    print(i)
-    print("入力データ |   ", test_input_lines[i])
-    test_input_line = test_input_lines[i].split()
-    result = mt(model, test_input_line)
-
-    if i == (len(test_input_lines) - 1):
-        result_file.write(' '.join(result).strip())
-    else:
-        result_file.write(' '.join(result).strip() + '\n')
+## 出力結果を得る
+for i in range(len(output_input_lines)):
+    output_input_line = output_input_lines[i].split()
+    output_input_line.append("<eos>")
+    result = output(model, output_input_line)
+    print("出力データ ", ' '.join(result).strip())
+    # if i == (len(output_input_lines) - 1):
+    #     result_file.write(' '.join(result).strip())
+    # else:
+    #     result_file.write(' '.join(result).strip() + '\n')
 result_file.close
