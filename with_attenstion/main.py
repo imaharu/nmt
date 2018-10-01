@@ -8,8 +8,8 @@ import time
 from get_data import *
 import torch.optim as optim
 
-# train_num, hidden_size, batch_size = 20000, 256, 50
-train_num, hidden_size, batch_size = 5, 256, 5
+train_num, hidden_size, batch_size = 20000, 256, 50
+# train_num, hidden_size, batch_size = 5, 4, 5
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -41,12 +41,13 @@ class Encoder_Decoder(nn.Module):
         self.attention_linear = nn.Linear(hidden_size * 2, hidden_size)
 
     def create_mask(self, input_sentence_words):
-        return torch.cat( [ input_sentence_words.unsqueeze(-1) ] * 256, 1)
+        return torch.cat( [ input_sentence_words.unsqueeze(-1) ] * self.hidden_size, 1)
 
     def forward(self, input_lines ,target_lines):
         hs = torch.zeros(batch_size, self.hidden_size).cuda()
         cs = torch.zeros(batch_size, self.hidden_size).cuda()
         list_hs = []
+        list_source_mask = []
         for input_sentence_words in input_lines:
             before_hs = hs
             before_cs = cs
@@ -54,31 +55,35 @@ class Encoder_Decoder(nn.Module):
             input_k = self.embed_input(input_sentence_words)
             input_k = self.drop_input(input_k)
 
-            hs, cx = self.lstm_input(input_k, (hs, cs) )
-
+            hs, cs = self.lstm_input(input_k, (hs, cs) )
             mask = self.create_mask(input_sentence_words)
             hs = torch.where(mask == 0, before_hs, hs)
             cs = torch.where(mask == 0, before_cs, cs)
-
             list_hs.append(hs)
+            masks = torch.cat( [ input_sentence_words.unsqueeze(-1) ] , 1)
+            list_source_mask.append( torch.unsqueeze(masks, 0))
         list_hs = torch.stack(list_hs, 0)
-
+        list_source_mask = torch.cat(list_source_mask)
         max_num =  len(target_lines) # paddingの数
         target_lines_not_last = target_lines[:(max_num-1)]
         target_lines_next = target_lines[1:]
         loss = 0
 
         ht = hs
+        ct = cs
+        inf = torch.full((len(input_lines), batch_size), float('-inf')).cuda()
+        inf = torch.unsqueeze(inf, -1)
+
         for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
             target_k = self.embed_target(target_sentence_words)
             target_k = self.drop_target(target_k)
-            ht, cx = self.lstm_target(target_k, (ht, cx) )
-
-            a_t = F.softmax( (ht * list_hs).sum(-1,keepdim=True), 0 )
+            ht, ct = self.lstm_target(target_k, (ht, ct) )
+            dot = (ht * list_hs).sum(-1, keepdim=True)
+            dot = torch.where(list_source_mask == 0, inf, dot)
+            a_t = F.softmax( (ht * list_hs).sum(-1, keepdim=True), 1 )
             d = (a_t * list_hs).sum(0)
             concat  = torch.cat((d, ht), 1)
             ht_new = F.tanh(self.attention_linear(concat))
-            
             loss += F.cross_entropy(self.linear(ht_new), target_sentence_words_next, ignore_index=0)
         return loss
 
@@ -89,7 +94,7 @@ model = model.to(device)
 
 start = time.time()
 
-epoch_num = 1
+epoch_num = 15
 for epoch in range(epoch_num):
     print("epoch",epoch + 1)
     indexes = torch.randperm(train_num)
@@ -111,8 +116,12 @@ for epoch in range(epoch_num):
         loss.backward()
         optimizer.step()
 
-    # if (epoch + 1) % 5 == 0:
-    #     outfile = "attention_mt-" + str(epoch + 1) + ".model"
-    #     torch.save(model.state_dict(), outfile)
-    # elapsed_time = time.time() - start
-    # print("時間:",elapsed_time / 60.0, "分")
+    if (epoch + 1) == 1:
+        outfile = "attention_mt-" + str(epoch + 1) + ".model"
+        torch.save(model.state_dict(), outfile)
+
+    if (epoch + 1) % 5 == 0:
+        outfile = "attention_mt-" + str(epoch + 1) + ".model"
+        torch.save(model.state_dict(), outfile)
+    elapsed_time = time.time() - start
+    print("時間:",elapsed_time / 60.0, "分")

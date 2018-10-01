@@ -51,7 +51,7 @@ class Encoder_Decoder(nn.Module):
             before_hx = hx
             before_cx = cx
             input_k = self.embed_input(input_sentence_words)
-            input_k = self.drop_input(input_k)
+            # input_k = self.drop_input(input_k)
             hx, cx = self.lstm_input(input_k, (hx, cx) )
             mask = self.create_mask(input_sentence_words)
             hx = torch.where(mask == 0, before_hx, hx)
@@ -64,7 +64,7 @@ class Encoder_Decoder(nn.Module):
 
         for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
             target_k = self.embed_target(target_sentence_words)
-            target_k = self.drop_target(target_k)
+            # target_k = self.drop_target(target_k)
             hx, cx = self.lstm_target(target_k, (hx, cx) )
             loss += F.cross_entropy(self.linear(hx), target_sentence_words_next, ignore_index=0)
         return loss
@@ -99,7 +99,7 @@ for epoch in range(15):
         optimizer.step()
 
     if (epoch + 1) % 5 == 0:
-        outfile = "no-eos-" + str(epoch + 1) + ".model"
+        outfile = "no-drop-" + str(epoch + 1) + ".model"
         torch.save(model.state_dict(), outfile)
     elapsed_time = time.time() - start
     print("時間:",elapsed_time / 60.0, "分")

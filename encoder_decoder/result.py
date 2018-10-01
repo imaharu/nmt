@@ -43,7 +43,7 @@ class Encoder_Decoder(nn.Module):
         self.output_size = output_size
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("no-eos-15.model"))
+model.load_state_dict(torch.load("no-drop-15.model"))
 
 optimizer = torch.optim.Adam(model.parameters())
 device = torch.device('cuda:0')
@@ -61,7 +61,7 @@ def output(model, output_input_line):
         else:
             word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
         input_k = model.embed_input(word_id)
-        input_k = model.drop_input(input_k)
+        #input_k = model.drop_input(input_k)
         hx, cx = model.lstm_input(input_k, (hx, cx) )
     loop = 0
     word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
@@ -70,7 +70,7 @@ def output(model, output_input_line):
         if loop >= 50:
             break
         target_k = model.embed_target(word_id)
-        target_k = model.drop_target(target_k)
+        # target_k = model.drop_target(target_k)
         hx, cx = model.lstm_target(target_k, (hx, cx) )
         word_id = torch.tensor([ torch.argmax(F.softmax(model.linear(hx), dim=1).data[0]) ]).cuda()
         loop += 1
@@ -78,7 +78,7 @@ def output(model, output_input_line):
             result.append(translate_words[int(word_id)])
     return result
 
-result_file_ja = '/home/ochi/src/data/blue/seq2seq.txt'
+result_file_ja = '/home/ochi/src/data/blue/seq2seq-no-drop.txt'
 result_file = open(result_file_ja, 'w', encoding="utf-8")
 
 ## 出力結果を得る
