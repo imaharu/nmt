@@ -10,7 +10,7 @@ from get_data import *
 import torch.optim as optim
 
 train_num, hidden_size= 20000, 256
-test_num = 1000
+test_num = 10
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
