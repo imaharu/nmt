@@ -53,8 +53,6 @@ class Encoder_Decoder(nn.Module):
             before_cs = cs
 
             input_k = self.embed_input(input_sentence_words)
-            input_k = self.drop_input(input_k)
-
             hs, cs = self.lstm_input(input_k, (hs, cs) )
             mask = self.create_mask(input_sentence_words)
             hs = torch.where(mask == 0, before_hs, hs)
@@ -62,6 +60,7 @@ class Encoder_Decoder(nn.Module):
             list_hs.append(hs)
             masks = torch.cat( [ input_sentence_words.unsqueeze(-1) ] , 1)
             list_source_mask.append( torch.unsqueeze(masks, 0))
+
         list_hs = torch.stack(list_hs, 0)
         list_source_mask = torch.cat(list_source_mask)
         max_num =  len(target_lines) # paddingの数
@@ -76,11 +75,10 @@ class Encoder_Decoder(nn.Module):
 
         for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
             target_k = self.embed_target(target_sentence_words)
-            target_k = self.drop_target(target_k)
             ht, ct = self.lstm_target(target_k, (ht, ct) )
             dot = (ht * list_hs).sum(-1, keepdim=True)
             dot = torch.where(list_source_mask == 0, inf, dot)
-            a_t = F.softmax( (ht * list_hs).sum(-1, keepdim=True), 1 )
+            a_t = F.softmax( dot, 0 )
             d = (a_t * list_hs).sum(0)
             concat  = torch.cat((d, ht), 1)
             ht_new = F.tanh(self.attention_linear(concat))
@@ -115,10 +113,6 @@ for epoch in range(epoch_num):
         loss = model(Transposed_input, Transposed_target)
         loss.backward()
         optimizer.step()
-
-    if (epoch + 1) == 1:
-        outfile = "attention_mt-" + str(epoch + 1) + ".model"
-        torch.save(model.state_dict(), outfile)
 
     if (epoch + 1) % 5 == 0:
         outfile = "attention_mt-" + str(epoch + 1) + ".model"
