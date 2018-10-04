@@ -53,6 +53,7 @@ class Encoder_Decoder(nn.Module):
             before_cs = cs
 
             input_k = self.embed_input(input_sentence_words)
+            input_k = self.drop_input(input_k)
             hs, cs = self.lstm_input(input_k, (hs, cs) )
             mask = self.create_mask(input_sentence_words)
             hs = torch.where(mask == 0, before_hs, hs)
@@ -75,6 +76,7 @@ class Encoder_Decoder(nn.Module):
 
         for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
             target_k = self.embed_target(target_sentence_words)
+            target_k = self.drop_target(target_k)
             ht, ct = self.lstm_target(target_k, (ht, ct) )
             dot = (ht * list_hs).sum(-1, keepdim=True)
             dot = torch.where(list_source_mask == 0, inf, dot)
@@ -86,13 +88,13 @@ class Encoder_Decoder(nn.Module):
         return loss
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-optimizer = torch.optim.Adam(model.parameters())
+optimizer = torch.optim.Adam(model.parameters(), weight_decay=1.0e-6)
 device = torch.device('cuda:0')
 model = model.to(device)
 
 start = time.time()
 
-epoch_num = 15
+epoch_num = 20
 for epoch in range(epoch_num):
     print("epoch",epoch + 1)
     indexes = torch.randperm(train_num)

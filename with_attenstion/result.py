@@ -9,7 +9,7 @@ from get_data import *
 import torch.optim as optim
 
 train_num, hidden_size = 20000, 256
-test_num = 100
+test_num = 1000
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -32,11 +32,9 @@ class Encoder_Decoder(nn.Module):
         self.output_size = output_size
         
         self.embed_input = nn.Embedding(input_size, hidden_size, padding_idx=0)
-        self.drop_input = nn.Dropout(p=0.2)
         self.lstm_input = nn.LSTMCell(hidden_size, hidden_size)
 
         self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
-        self.drop_target = nn.Dropout(p=0.2)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, output_size)
         self.attention_linear = nn.Linear(hidden_size * 2, hidden_size)
@@ -53,7 +51,6 @@ class Encoder_Decoder(nn.Module):
             if input_vocab.get(output_input_line[i]):
                 word_id = torch.tensor([input_vocab[output_input_line[i]]]).cuda()
             else:
-                ## TODO:ない場合は<unk>にしたい -> 学習時点から
                 word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
 
             input_k = self.embed_input(word_id)
@@ -86,7 +83,7 @@ class Encoder_Decoder(nn.Module):
         return result
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("attention_mt-15.model"))
+model.load_state_dict(torch.load("attention_mt-20.model"))
 
 optimizer = torch.optim.Adam(model.parameters())
 device = torch.device('cuda:0')
