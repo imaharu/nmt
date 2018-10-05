@@ -97,7 +97,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     encoder = Encoder(ev, hidden_size).to(device)
     decoder = Decoder(jv, hidden_size).to(device)
-
+    # Todo cat
     encoder_optimizer = torch.optim.Adam(encoder.parameters(), weight_decay=1.0e-4)
     decoder_optimizer = torch.optim.Adam(decoder.parameters(), weight_decay=1.0e-4)
 
