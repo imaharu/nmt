@@ -10,8 +10,8 @@ from get_data import *
 import torch.optim as optim
 from operator import itemgetter
 
-# train_num, hidden_size, batch_size = 20000, 256, 50
-train_num, hidden_size, batch_size = 5, 4, 5
+train_num, hidden_size, batch_size = 20000, 256, 50
+# train_num, hidden_size, batch_size = 5, 4, 5
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
