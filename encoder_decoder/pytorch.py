@@ -71,7 +71,7 @@ class Encoder_Decoder(nn.Module):
         return loss
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-optimizer = torch.optim.Adam(model.parameters(), weight_decay=1.0e-6)
+optimizer = torch.optim.Adam(model.parameters(), weight_decay=1.0e-4)
 device = torch.device('cuda:0')
 model = model.to(device)
 

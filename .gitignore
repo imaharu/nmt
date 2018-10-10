@@ -20,4 +20,5 @@ smt/
 src/
 .subversion/
 .selected_editor
-MT/
+create_data
+reference
