@@ -42,7 +42,7 @@ class Encoder(nn.Module):
 
     def forward(self, sentence_words, hx, cx):
         source_k = self.embed_source(sentence_words)
-        # source_k = self.drop_source(source_k)
+        source_k = self.drop_source(source_k)
         hx, cx = self.lstm_source(source_k, (hx, cx) )
         return hx, cx
     
@@ -62,7 +62,7 @@ class Decoder(nn.Module):
 
     def forward(self, target_words, hx, cx):
         target_k = self.embed_target(target_words)
-        # target_k = self.drop_target(target_k)
+        target_k = self.drop_target(target_k)
         hx, cx = self.lstm_target(target_k, (hx, cx) )
         return hx, cx
 
