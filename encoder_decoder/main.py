@@ -10,8 +10,8 @@ from get_data import *
 import torch.optim as optim
 from operator import itemgetter
 
-# train_num, hidden_size, batch_size = 20000, 256, 50
-train_num, hidden_size, batch_size = 5, 4, 5
+train_num, hidden_size, batch_size = 20000, 256, 50
+# train_num, hidden_size, batch_size = 10, 4, 2
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -23,6 +23,12 @@ ev = len(input_vocab) + 1
 
 get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab) + 1
+
+class EncoderDecoder(nn.Module):
+    def __init__(self, source_size, output_size, hidden_size):
+        super(EncoderDecoder, self).__init__()
+        self.encoder = Encoder(source_size, hidden_size)
+        self.decoder = Decoder(output_size, hidden_size)
 
 class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):
@@ -59,11 +65,6 @@ class Decoder(nn.Module):
         hx, cx = self.lstm_target(target_k, (hx, cx) )
         return hx, cx
 
-# model = Encoder_Decoder(ev, jv, hidden_size)
-# optimizer = torch.optim.Adam(model.parameters(), weight_decay=1.0e-4)
-# device = torch.device('cuda:0')
-# model = model.to(device)
-
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
@@ -90,15 +91,12 @@ def train(encoder, decoder, source_lines, target_lines):
 
 if __name__ == '__main__':
     start = time.time()
-    
     device = torch.device('cuda:0')
-    encoder = Encoder(ev, hidden_size).to(device)
-    decoder = Decoder(jv, hidden_size).to(device)
-    # Todo cat
-    encoder_optimizer = torch.optim.Adam(encoder.parameters(), weight_decay=1.0e-4)
-    decoder_optimizer = torch.optim.Adam(decoder.parameters(), weight_decay=1.0e-4)
+    model = EncoderDecoder(ev, jv, hidden_size).to(device)
+    model.train()
+    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(1):
+    for epoch in range(20):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -115,16 +113,13 @@ if __name__ == '__main__':
             batch_target_paddings = Padding(batch_target_lines)
             Transposed_target = batch_target_paddings.t().cuda()
 
-            encoder.zero_grad()
-            decoder.zero_grad()
-
-            loss = train(encoder, decoder, Transposed_input, Transposed_target)
+            optimizer.zero_grad()
+            loss = train(model.encoder, model.decoder, Transposed_input, Transposed_target)
             loss.backward()
-            encoder_optimizer.step()
-            decoder_optimizer.step()
+            optimizer.step()
 
         if (epoch + 1) % 5 == 0:
-            outfile = "last-" + str(epoch + 1) + ".model"
+            outfile = "model-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
