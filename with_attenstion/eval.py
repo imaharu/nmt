@@ -8,6 +8,7 @@ import time
 import numpy as np
 from get_data import *
 import torch.optim as optim
+import os
 
 train_num, hidden_size= 20000, 256
 test_num = 1000
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    result_file_ja = '/home/ochi/src/data/blue/attention.txt'
+    result_file_ja = os.environ["OUTPUT_DIRECTORY"] + "/attention.txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):
