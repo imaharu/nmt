@@ -5,3 +5,5 @@ __pycache__
 test.en
 train.en
 train.ja
+main.py
+result.py
