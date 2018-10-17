@@ -3,3 +3,4 @@ DUC
 ._.DS_Store
 ._DUC
 en_data
+__pycache__/
