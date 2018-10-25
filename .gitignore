@@ -4,3 +4,4 @@ DUC
 ._DUC
 en_data
 __pycache__/
+*.model

@@ -8,9 +8,9 @@ import glob
 english_vocab, arabic_vocab, czech_vocab = {}, {} , {}
 french_vocab, greek_vocab, hebrew_vocab, hindi_vocab = {}, {} , {}, {}
 
-train_doc_num = 4
-batch_size = 4
-hidden_size =  256
+train_doc_num = 100
+batch_size =  5
+hidden_size = 256
 
 data_path = os.environ["tac_data"]
 english_paths = sorted(glob.glob(data_path + "/*.english"))[0:train_doc_num]
