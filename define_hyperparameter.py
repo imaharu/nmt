@@ -8,8 +8,8 @@ import glob
 english_vocab, arabic_vocab, czech_vocab = {}, {} , {}
 french_vocab, greek_vocab, hebrew_vocab, hindi_vocab = {}, {} , {}, {}
 
-train_doc_num = 100
-batch_size =  5
+train_doc_num = 2
+batch_size =  2
 hidden_size = 256
 
 data_path = os.environ["tac_data"]
