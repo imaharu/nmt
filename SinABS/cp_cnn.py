@@ -64,17 +64,9 @@ def clean_lines(lines):
 	return cleaned
 
 # load stories
-directory = "/home/ochi/src/cnn_data"
-i = 0
-for name in listdir(directory):
-	filename = directory + "/" + name
+def separate_data(filename):
 	doc = load_doc(filename)
 	story, highlights = split_story(doc)
 	# store
-	i += 1
-	print("-------------------------")
-	print("i", i)
-	print("story", story)
 	story = clean_lines(story.split("\n"))
 	highlights = clean_lines(highlights)
-	print("story splite", story)

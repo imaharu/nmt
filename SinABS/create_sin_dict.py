@@ -1,9 +1,6 @@
 import glob
 import linecache
 
-def get_summary(file_path, line_num):
-    return linecache.getline(file_path, line_num, module_globals=None).replace('\n','')
-
 def get_dict(language_files, vocab, limit):
     vocab['<unk>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
@@ -20,12 +17,6 @@ def get_dict(language_files, vocab, limit):
                     vocab[word] = len(vocab) + 1
         i += 1
 
-
-def get_cnn_source_doc(file_name, vocab_dict):
-	with open(file_name) as lines:
-		for line in lines:
-			print(line)
-
 def get_source_doc(file_name, vocab_dict ,line_num):
     with open(file_name) as lines:
         next(lines)
@@ -35,8 +26,6 @@ def get_source_doc(file_name, vocab_dict ,line_num):
         doc_source
     return doc_source
 
-def get_target_doc(file_name):
-    return get_summary(file_name, 1)
 
 import torch
 def sentence_padding(batch_docs, max_doc_sentence_num):
