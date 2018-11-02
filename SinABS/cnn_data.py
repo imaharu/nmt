@@ -28,25 +28,25 @@ def clean_lines(lines):
     for line in lines:
         # strip source cnn office if it exists
 
-        index = line.find("-LRB- EW.com -RRB-")
+        index = line.find("-lrb- ew.com -rrb-")
         if index > -1:
-            line = line[index+len("-LRB- EW.com -RRB-"):]
+            line = line[index+len("-lrb- ew.com -rrb-"):]
 
-        index = line.find("-LRB- Wired.com -RRB-")
+        index = line.find("-lrb- wired.com -rrb-")
         if index > -1:
-            line = line[index+len("-LRB- Wired.com -RRB-"):]
+            line = line[index+len("-lrb- wired.com -rrb-"):]
 
-        index = line.find("-LRB- CNN -RRB- --")
+        index = line.find("-lrb- cnn -rrb- --")
         if index > -1:
-            line = line[index+len("-LRB- CNN -RRB- --"):]
+            line = line[index+len("-lrb- cnn -rrb- --"):]
 
-        index = line.find("-LRB- CNN -RRB-")
+        index = line.find("-lrb- cnn -rrb-")
         if index > -1:
-            line = line[index+len("-LRB- CNN -RRB-"):]
+            line = line[index+len("-lrb- cnn -rrb-"):]
 
-        index = line.find('(CNN) -- ')
+        index = line.find('(cnn) -- ')
         if index > -1:
-            line = line[index+len('(CNN)'):]
+            line = line[index+len('(ccn)'):]
 
 
         # tokenize on white space
