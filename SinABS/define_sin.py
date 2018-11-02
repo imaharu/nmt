@@ -7,7 +7,7 @@ import glob
 
 english_vocab = {}
 
-train_doc_num = 2
+train_doc_num = 1
 batch_size =  2
 hidden_size = 256
 

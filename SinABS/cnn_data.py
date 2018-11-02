@@ -17,7 +17,7 @@ def split_story(doc):
     # split into story and highlights
     story, highlights = doc[:index], doc[index:].split("@highlight")
     # strip extra white space around each highlight
-    highlights = [h.strip() for h in highlights if len(h) > 0]
+    highlights = [ h.strip() for h in highlights if len(h) > 0]
     return story, highlights
 
 # clean a list of lines

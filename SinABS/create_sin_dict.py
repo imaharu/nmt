@@ -7,13 +7,24 @@ def get_dict(language_files, vocab, limit):
     vocab['<teos>'] = len(vocab) + 1
     vocab['<bod>'] = len(vocab) + 1
     vocab['<eod>'] = len(vocab) + 1
-    i = 4
-    for file_path in language_files:
-        with open(file_path) as f:
-            if i == (limit + 4):
-                break
-            doc = f.read().split()
-            for word in doc:
+    i = 0
+    for filename in language_files:
+        if i == limit:
+            break
+        story_lines = [ line.split() for line in separate_source_data(filename) ]
+        highlights_lines = [ line.split() for line in separate_target_data(filename) ]
+        for lines in story_lines:
+            for word in lines:
                 if word not in vocab:
                     vocab[word] = len(vocab) + 1
-        i += 1
+
+        for lines in highlights_lines:
+            for word in lines:
+                if word not in vocab:
+                    vocab[word] = len(vocab) + 1
+        i +=  1
+
+def get_source_doc(filename, vocab_dict):
+    story = separate_source_data(filename)
+    doc_source = [ [ vocab_dict[word] for word in line.split() ] for line in story ]
+    return doc_source
