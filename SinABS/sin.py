@@ -39,6 +39,7 @@ if __name__ == '__main__':
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
             source_padding = sentence_padding(source_docs, max_doc_sentence_num)
+            word_padding = word_padding(source_padding, max_doc_sentence_num)
             # targets_docs
             # batch_targets_docs = [ [ english_vocab[i] for i in get_target_doc(english_paths[doc_num]).split() ] for doc_num in indexes[i:i+batch_size] ]
             # for batch_targets_doc in batch_targets_docs:

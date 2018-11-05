@@ -1,7 +1,6 @@
 import glob
 import linecache
 from cnn_data import *
-
 def get_dict(language_files, vocab, limit):
     vocab['<unk>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
@@ -35,3 +34,8 @@ def sentence_padding(docs, max_ds_num):
             padding_list = [[0]] * (max_ds_num - len(doc))
             doc.extend(padding_list)
     return docs
+
+def word_padding(docs, max_ds_num):
+    for i in range(0, max_ds_num):
+        max_word_num = max([*map(lambda x: len(x), [ sentence[i] for sentence in docs ] ) ])
+        
