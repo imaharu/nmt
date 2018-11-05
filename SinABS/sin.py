@@ -30,18 +30,15 @@ if __name__ == '__main__':
     #model.train()
     #optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for epoch in range(1):
-        batch_targets_docs = []
-        batch_sources_docs = []
+        target_docs = []
+        source_docs = []
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_doc_num)
         for i in range(0, train_doc_num, batch_size):
-            a = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
-            exit()
-            # targets_docs
-            batch_sources_docs = [ get_source_doc(english_paths[doc_num] , english_vocab, 2) for doc_num in indexes[i:i+batch_size] ]
-            max_doc_word_num = max([*map(lambda x: max(x), [ [ *map(lambda x: len(x), sentence) ]for sentence in batch_sources_docs])])
-            max_doc_sentence_num =  max([*map(lambda x: len(x), batch_sources_docs)])
-            source_padding = sentence_padding(batch_sources_docs, max_doc_sentence_num)
+            source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
+            # source_docs
+            max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
+            source_padding = sentence_padding(source_docs, max_doc_sentence_num)
             # targets_docs
             # batch_targets_docs = [ [ english_vocab[i] for i in get_target_doc(english_paths[doc_num]).split() ] for doc_num in indexes[i:i+batch_size] ]
             # for batch_targets_doc in batch_targets_docs:
