@@ -28,6 +28,11 @@ def get_source_doc(filename, vocab_dict):
     doc_source = [ [ vocab_dict[word] for word in line.split() ] for line in story ]
     return doc_source
 
+def get_target_doc(filename, vocab_dict):
+    highlight = separate_target_data(filename)
+    doc_target = [ [ vocab_dict[word] for word in line.split() ] for line in highlight ]
+    return doc_target
+
 def sentence_padding(docs, max_ds_num):
     for doc in docs:
         if len(doc) < max_ds_num:
