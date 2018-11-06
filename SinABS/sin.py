@@ -41,12 +41,17 @@ if __name__ == '__main__':
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
             source_spadding = sentence_padding(source_docs, max_doc_sentence_num)
             source_wpadding = word_padding(source_spadding, max_doc_sentence_num)
+
+
             # targets_docs
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
+            # add <teos> to target_docs
+            target_docs = [ [ s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_spadding = sentence_padding(target_docs, max_doc_target_num)
             target_wpadding = word_padding(target_spadding, max_doc_target_num)
-            # for batch_targets_doc in batch_targets_docs:
-            #     batch_targets_doc.insert(0, english_vocab['<bod>'])
-            #     batch_targets_doc.append(english_vocab['<teos>'])
-            #     batch_targets_doc.append(english_vocab['<eod>'])
-            # train(model.encoder, batch_sources_docs, batch_sources_docs)
+
+            for target in target_spadding:
+                target.insert(0, [ english_vocab["<bod>"] ])
+                target.append([english_vocab["<eod>"]])
+
+            #train(model.encoder, batch_sources_docs, batch_sources_docs)
