@@ -14,8 +14,8 @@ class HierachicalEncoderDecoder(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):
         super(Encoder, self).__init__()
-        self.sentence_encoder = SentenceEncoder(source_size, hidden_size)
-        self.doc_encoder = DocEncoder(source_size, hidden_size)
+        self.s_encoder = SentenceEncoder(source_size, hidden_size)
+        self.d_encoder = DocEncoder(source_size, hidden_size)
 
 class SentenceEncoder(nn.Module):
     def __init__(self, source_size, hidden_size):
@@ -60,8 +60,8 @@ class DocEncoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
-        self.sentence_decoder = SentenceDecoder(target_size, hidden_size)
-        self.doc_decoder = DocDecoder(target_size, hidden_size)
+        self.s_decoder = SentenceDecoder(target_size, hidden_size)
+        self.d_decoder = DocDecoder(target_size, hidden_size)
 
 class SentenceDecoder(nn.Module):
     def __init__(self, target_size, hidden_size):

@@ -46,6 +46,17 @@ def word_padding(docs, max_ds_num):
         for j in range(0, len(docs)):
             sl = len(docs[j][i])
             if sl < max_word_num:
+                print("i : ", i)
+                print("sl", sl)
+                print("max", max_word_num)
+                print("len_docs_0", len(docs[0][i]))
+                print("docs_0", docs[0][i])
+                print("len_docs_1", len(docs[1][i]))
+                print("docs_1", docs[1][i])
                 padding_word = [0] * (max_word_num - sl)
                 docs[j][i].extend(padding_word)
+                print("padding", padding_word)
+                print("extend docs", docs[j][i])
+                print("--------------------")
+                print("--------------------")
     return docs
