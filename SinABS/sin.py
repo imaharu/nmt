@@ -20,13 +20,7 @@ def train(encoder, decoder, source_doc, target_doc):
     d_hx, d_cx = encoder.d_encoder.initHidden()
     max_dsn =  max([*map(lambda x: len(x), source_docs )])
     max_dtn =  max([*map(lambda x: len(x), target_docs )])
-    print(source_docs[0][17])
-    print("len 0", len(source_docs[0][17]))
-    print(source_docs[1][17])
-    print("len 1", len(source_docs[1][17]))
-    print("-----------")
     for i in range(0, max_dsn):
-        print(i)
         lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda()
         #    s_hx , s_cx = encoder.s_encoder(source_w)
     return 1
@@ -49,20 +43,12 @@ if __name__ == '__main__':
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
             source_spadding = sentence_padding(source_docs, max_doc_sentence_num)
             source_wpadding = word_padding(source_spadding, max_doc_sentence_num)
-            print(source_docs[0][17])
-            print("len 0", len(source_docs[0][17]))
-            print(source_docs[1][17])
-            print("len 1", len(source_docs[1][17]))
-            exit()
-            # targets_docs
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
             # add <teos> to target_docs
             target_docs = [ [ s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_spadding = sentence_padding(target_docs, max_doc_target_num)
             target_wpadding = word_padding(target_spadding, max_doc_target_num)
-
             for target in target_wpadding:
                 target.insert(0, [ english_vocab["<bod>"] ])
                 target.append([english_vocab["<eod>"]])
-            print(target_wpadding)
             train(model.encoder, model.decoder, source_wpadding,target_wpadding)
