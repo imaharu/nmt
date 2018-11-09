@@ -26,11 +26,10 @@ def train(encoder, decoder, source_doc, target_doc):
         for words in lines:
             es_hx , es_cx = encoder.w_encoder(words, ew_hx, ew_cx)
         es_hx , es_cx = encoder.s_encoder(es_hx, ew_hx, ew_cx)
-
-    dw_hx, dw_cx = ew_hx, ew_cx
+    
     ds_hx, ds_cx = es_hx, es_cx
+
     for i in range(0, max_dtn):
-        # first s -> w
         dw_hx, dw_cx = ds_hx, ds_cx
         lines = torch.tensor([ x[i]  for x in target_doc ]).t().cuda()
         # t -> true, f -> false
@@ -40,7 +39,7 @@ def train(encoder, decoder, source_doc, target_doc):
             dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
             loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
         ds_hx , ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
-    return 1
+    return ds_hx, ds_cx
 
 if __name__ == '__main__':
     start = time.time()
@@ -58,14 +57,17 @@ if __name__ == '__main__':
             target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
+            source_docs = [ [ s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in source_docs]
             source_spadding = sentence_padding(source_docs, max_doc_sentence_num)
             source_wpadding = word_padding(source_spadding, max_doc_sentence_num)
+            for source in source_wpadding:
+                source.append([ english_vocab["<bod>"] ])
+
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
             # add <teos> to target_docs
             target_docs = [ [ s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_spadding = sentence_padding(target_docs, max_doc_target_num)
             target_wpadding = word_padding(target_spadding, max_doc_target_num)
             for target in target_wpadding:
-                #target.insert(0, [ english_vocab["<bod>"] ])
                 target.append([english_vocab["<eod>"]])
             train(model.encoder, model.decoder, source_wpadding,target_wpadding)
