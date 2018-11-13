@@ -15,6 +15,9 @@ from define_sin import *
 # Other
 import time
 
+def create_mask(words):
+    return torch.cat( [ words.unsqueeze(-1) ] * hidden_size, 1)
+
 def train(encoder, decoder, source_doc, target_doc):
     loss = 0
     ew_hx, ew_cx = encoder.w_encoder.initHidden()
@@ -24,9 +27,18 @@ def train(encoder, decoder, source_doc, target_doc):
     for i in range(0, max_dsn):
         lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda()
         for words in lines:
-            es_hx , es_cx = encoder.w_encoder(words, ew_hx, ew_cx)
-        es_hx , es_cx = encoder.s_encoder(es_hx, ew_hx, ew_cx)
-    
+            before_ew_hx , before_ew_cx = ew_hx , ew_cx
+            ew_hx , ew_cx = encoder.w_encoder(words, ew_hx, ew_cx)
+            w_mask = create_mask(words)
+            ew_hx = torch.where(w_mask == 0, before_ew_hx, ew_hx)
+            ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
+
+        before_es_hx, before_es_cx = es_hx, es_cx
+        s_mask = create_mask(lines[0])
+        es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
+        es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
+        es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
+
     ds_hx, ds_cx = es_hx, es_cx
 
     for i in range(0, max_dtn):

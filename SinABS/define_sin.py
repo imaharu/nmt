@@ -9,7 +9,7 @@ english_vocab = {}
 
 train_doc_num = 2
 batch_size =  2
-hidden_size = 256
+hidden_size = 4
 
 data_path = os.environ["cnn_data"]
 
