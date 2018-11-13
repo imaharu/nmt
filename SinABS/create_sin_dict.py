@@ -1,15 +1,27 @@
 import glob
 import linecache
 from cnn_data import *
-def get_dict(language_files, vocab, limit):
+
+def count_dict(language_files, c_vocab):
+    for filename in language_files:
+        story_lines = [ line.split() for line in separate_source_data(filename) ]
+        highlights_lines = [ line.split() for line in separate_target_data(filename) ]
+        for lines in story_lines:
+            for word in lines:
+                if word in c_vocab:
+                    c_vocab[word] += 1
+                else:
+                    c_vocab[word] = 1
+    print(c_vocab)
+    return 1
+
+def get_dict(language_files, vocab):
     vocab['<unk>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
     vocab['<bod>'] = len(vocab) + 1
     vocab['<eod>'] = len(vocab) + 1
     i = 0
     for filename in language_files:
-        if i == limit:
-            break
         story_lines = [ line.split() for line in separate_source_data(filename) ]
         highlights_lines = [ line.split() for line in separate_target_data(filename) ]
         for lines in story_lines:
