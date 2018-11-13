@@ -48,9 +48,18 @@ def train(encoder, decoder, source_doc, target_doc):
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
         for words_f, word_t in zip(lines_f_last, lines_f_last):
+            before_dw_hx, before_dw_cx = dw_hx, dw_cx
             dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
+            w_mask = create_mask(words_f)
+            dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
+            dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
             loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
+        before_ds_hx, before_ds_cx = ds_hx, ds_cx
+        s_mask = create_mask(lines[0])
         ds_hx , ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
+        ds_hx = torch.where(s_mask == 0, before_ds_hx, ds_hx)
+        ds_cx = torch.where(s_mask == 0, before_ds_cx, ds_cx)
+
     return ds_hx, ds_cx
 
 if __name__ == '__main__':
