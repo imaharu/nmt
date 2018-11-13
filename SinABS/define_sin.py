@@ -7,9 +7,9 @@ import glob
 
 english_vocab = {}
 
-train_doc_num = 2
-batch_size =  2
-hidden_size = 4
+train_doc_num = 20000
+batch_size = 5
+hidden_size = 1000
 
 data_path = os.environ["cnn_data"]
 

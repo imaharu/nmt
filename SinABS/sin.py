@@ -32,7 +32,6 @@ def train(encoder, decoder, source_doc, target_doc):
             w_mask = create_mask(words)
             ew_hx = torch.where(w_mask == 0, before_ew_hx, ew_hx)
             ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
-
         before_es_hx, before_es_cx = es_hx, es_cx
         s_mask = create_mask(lines[0])
         es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
@@ -59,8 +58,7 @@ def train(encoder, decoder, source_doc, target_doc):
         ds_hx , ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
         ds_hx = torch.where(s_mask == 0, before_ds_hx, ds_hx)
         ds_cx = torch.where(s_mask == 0, before_ds_cx, ds_cx)
-
-    return ds_hx, ds_cx
+    return loss
 
 if __name__ == '__main__':
     start = time.time()
@@ -68,6 +66,7 @@ if __name__ == '__main__':
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
+
     for epoch in range(1):
         target_docs = []
         source_docs = []
@@ -75,6 +74,7 @@ if __name__ == '__main__':
         indexes = torch.randperm(train_doc_num)
         for i in range(0, train_doc_num, batch_size):
             source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
+            print(source_docs)
             target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
@@ -91,4 +91,15 @@ if __name__ == '__main__':
             target_wpadding = word_padding(target_spadding, max_doc_target_num)
             for target in target_wpadding:
                 target.append([english_vocab["<eod>"]])
-            train(model.encoder, model.decoder, source_wpadding,target_wpadding)
+            optimizer.zero_grad()
+            loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
+            print("loss", loss)
+            loss.backward()
+            print("back pass")
+            optimizer.step()
+
+        if (epoch + 1)  % 2 == 0:
+            outfile = "SinABS-" + str(epoch + 1) + ".model"
+            torch.save(model.stat_dict(), outfile)
+        elapsed_time = time.time() - start
+        print("時間:",elapsed_time / 60.0, "分")
