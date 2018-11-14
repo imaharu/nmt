@@ -6,7 +6,6 @@ import os
 import glob
 
 english_vocab = {}
-c_vocab = {}
 
 train_doc_num = 20000
 batch_size = 5
