@@ -6,15 +6,16 @@ import os
 import glob
 import sys
 from collections import Counter
+
 argvs = sys.argv
 c_vocab = Counter()
 train_doc_num = int(argvs[1]) # defalut 20000
 co_num = int(argvs[2]) # defalut 30000
 data_path = os.environ["cnn_data"]
+data_path = "/home/ochi/Lab/SinABS/test"
 
 english_paths = sorted(glob.glob(data_path + "/*.story"))[0:train_doc_num]
-
-def count_dict(language_files, c_vocab):
+def get_unk_dict(language_files, c_vocab):
     for filename in language_files:
         story_lines = [ line.split() for line in separate_source_data(filename) ]
         highlights_lines = [ line.split() for line in separate_target_data(filename) ]
@@ -32,7 +33,21 @@ def count_dict(language_files, c_vocab):
                     c_vocab[word] += 1
                 else:
                     c_vocab[word] = 1
+    return c_vocab.most_common()[:co_num-1:-1]
 
-    no_unk_word = c_vocab.most_common(co_num)
+def unk_file(language_files, unk_dict):
+    i = 0
+    for filename in language_files:
+        with open(filename) as f:
+            doc = []
+            for line in f:
+                for word in line.split():
+                    if word in unk_dict:
+                        doc.append("<unk>")
+                    else:
+                        doc.append(word)
+        print(doc)
+        exit()
 
-count_dict(english_paths, c_vocab)
+unk_dict = dict(get_unk_dict(english_paths, c_vocab))
+unk_file(english_paths, unk_dict)
