@@ -25,7 +25,7 @@ def train(encoder, decoder, source_doc, target_doc):
     max_dsn =  max([*map(lambda x: len(x), source_docs )])
     max_dtn =  max([*map(lambda x: len(x), target_docs )])
     for i in range(0, max_dsn):
-        lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda()
+        lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda(device=device)
         for words in lines:
             before_ew_hx , before_ew_cx = ew_hx , ew_cx
             ew_hx , ew_cx = encoder.w_encoder(words, ew_hx, ew_cx)
@@ -42,7 +42,7 @@ def train(encoder, decoder, source_doc, target_doc):
 
     for i in range(0, max_dtn):
         dw_hx, dw_cx = ds_hx, ds_cx
-        lines = torch.tensor([ x[i]  for x in target_doc ]).t().cuda()
+        lines = torch.tensor([ x[i]  for x in target_doc ]).t().cuda(device=device)
         # t -> true, f -> false
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
@@ -62,7 +62,6 @@ def train(encoder, decoder, source_doc, target_doc):
 
 if __name__ == '__main__':
     start = time.time()
-    device = torch.device('cuda:1')
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
@@ -72,8 +71,10 @@ if __name__ == '__main__':
         source_docs = []
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_doc_num)
+        print(indexes)
         for i in range(0, train_doc_num, batch_size):
             print(i)
+            print(indexes[i:i+batch_size])
             source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             # source_docs
@@ -100,6 +101,6 @@ if __name__ == '__main__':
 
         if (epoch + 1)  % 1 == 0:
             outfile = "SinABS-" + str(epoch + 1) + ".model"
-            torch.save(model.stat_dict(), outfile)
+            torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

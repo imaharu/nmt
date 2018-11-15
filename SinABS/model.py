@@ -33,8 +33,8 @@ class WordEncoder(nn.Module):
         return w_hx, w_cx
 
     def initHidden(self):
-        hx = torch.zeros(batch_size, self.hidden_size).cuda()
-        cx = torch.zeros(batch_size, self.hidden_size).cuda()
+        hx = torch.zeros(batch_size, self.hidden_size).cuda(device=device)
+        cx = torch.zeros(batch_size, self.hidden_size).cuda(device=device)
         return hx, cx
 
 class SentenceEncoder(nn.Module):
@@ -52,8 +52,8 @@ class SentenceEncoder(nn.Module):
         return s_hx, s_cx
 
     def initHidden(self):
-        hx = torch.zeros(batch_size, self.hidden_size).cuda()
-        cx = torch.zeros(batch_size, self.hidden_size).cuda()
+        hx = torch.zeros(batch_size, self.hidden_size).cuda(device=device)
+        cx = torch.zeros(batch_size, self.hidden_size).cuda(device=device)
         return hx, cx
 
 class Decoder(nn.Module):

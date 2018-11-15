@@ -4,6 +4,7 @@ from create_sin_dict import *
 # Other
 import os
 import glob
+import torch
 
 english_vocab = {}
 
@@ -20,3 +21,5 @@ get_dict(english_paths, english_vocab)
 
 source_size = len(english_vocab) + 1
 target_size = len(english_vocab) + 1
+
+device = torch.device('cuda:1')
