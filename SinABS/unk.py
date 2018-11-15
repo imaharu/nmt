@@ -36,7 +36,7 @@ def get_unk_dict(language_files, c_vocab):
     return c_vocab.most_common()[:co_num-1:-1]
 
 def unk_file(language_files, unk_dict):
-    i = 0
+    i = 1 
     for filename in language_files:
         with open(filename) as f:
             doc = []
@@ -48,10 +48,13 @@ def unk_file(language_files, unk_dict):
                     else:
                         concat_line.append(word)
                 doc.append(" ".join(concat_line))
-        with open("cnn_unk/" + str(i).zfill(5) + "story",  "w" ) as w_f:
+        with open("cnn_unk/" + str(i).zfill(5) + ".story",  "w" ) as w_f:
             w_f.write("\n".join(doc))
         i += 1
         print(i)
 
 unk_dict = dict(get_unk_dict(english_paths, c_vocab))
+print(unk_dict)
+print(len(unk_dict))
+exit()
 unk_file(english_paths, unk_dict)

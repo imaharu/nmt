@@ -8,14 +8,13 @@ import glob
 english_vocab = {}
 
 train_doc_num = 20000
-batch_size = 5
-hidden_size = 1000
+batch_size = 10
+hidden_size = 512
 
-data_path = os.environ["cnn_data"]
+#data_path = os.environ["cnn_data"]
+data_path = os.environ["cnn_unk"]
 
 english_paths = sorted(glob.glob(data_path + "/*.story"))[0:train_doc_num]
-count_dict(english_paths, c_vocab)
-exit()
 
 get_dict(english_paths, english_vocab)
 

@@ -62,19 +62,19 @@ def train(encoder, decoder, source_doc, target_doc):
 
 if __name__ == '__main__':
     start = time.time()
-    device = torch.device('cuda:0')
+    device = torch.device('cuda:1')
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(1):
+    for epoch in range(5):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_doc_num)
         for i in range(0, train_doc_num, batch_size):
+            print(i)
             source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
-            print(source_docs)
             target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
@@ -98,7 +98,7 @@ if __name__ == '__main__':
             print("back pass")
             optimizer.step()
 
-        if (epoch + 1)  % 2 == 0:
+        if (epoch + 1)  % 1 == 0:
             outfile = "SinABS-" + str(epoch + 1) + ".model"
             torch.save(model.stat_dict(), outfile)
         elapsed_time = time.time() - start
