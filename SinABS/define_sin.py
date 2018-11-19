@@ -8,7 +8,7 @@ import torch
 
 english_vocab = {}
 
-train_doc_num = 20000
+train_doc_num = 19990
 batch_size = 10
 hidden_size = 512
 

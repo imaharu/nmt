@@ -54,7 +54,4 @@ def unk_file(language_files, unk_dict):
         print(i)
 
 unk_dict = dict(get_unk_dict(english_paths, c_vocab))
-print(unk_dict)
-print(len(unk_dict))
-exit()
 unk_file(english_paths, unk_dict)
