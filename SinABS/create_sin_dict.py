@@ -24,7 +24,7 @@ def get_dict(language_files, vocab):
 
 def get_source_doc(filename, vocab_dict):
     story = separate_source_data(filename)
-    doc_source = [ [ vocab_dict[word] for word in line.split() ] for line in story ]
+    doc_source = [ [ vocab_dict[word] if word in vocab_dict else vocab_dict["<unk>"] for word in line.split() ] for line in story ]
     return doc_source
 
 def get_target_doc(filename, vocab_dict):
