@@ -67,7 +67,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(10):
+    for epoch in range(20):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
@@ -94,11 +94,10 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
             print("loss", loss)
-            exit()
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1)  % 2 == 0:
+        if (epoch + 1)  % 4 == 0:
             outfile = "19990-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
