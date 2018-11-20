@@ -55,7 +55,8 @@ def train(encoder, decoder, source_doc, target_doc):
             loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
         before_ds_hx, before_ds_cx = ds_hx, ds_cx
         s_mask = create_mask(lines[0])
-        ds_hx , ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
+        ds_hx , ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
+        #ds_hx , ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
         ds_hx = torch.where(s_mask == 0, before_ds_hx, ds_hx)
         ds_cx = torch.where(s_mask == 0, before_ds_cx, ds_cx)
     return loss
@@ -84,20 +85,21 @@ if __name__ == '__main__':
 
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
             # add <teos> to target_docs
+
             target_docs = [ [ s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_spadding = sentence_padding(target_docs, max_doc_target_num)
             target_wpadding = word_padding(target_spadding, max_doc_target_num)
             for target in target_wpadding:
-                target.append([english_vocab["<eod>"]])
+                target.extend([ [english_vocab["<eod>"] ,  english_vocab["<teos>"]  ] ] )
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
-            #print("loss", loss)
+            print("loss", loss)
+            exit()
             loss.backward()
-            #print("back pass")
             optimizer.step()
 
-        if (epoch + 1)  % 1 == 0:
-            outfile = "SinABS-" + str(epoch + 1) + ".model"
+        if (epoch + 1)  % 2 == 0:
+            outfile = "19990-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
