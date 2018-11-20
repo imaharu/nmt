@@ -42,7 +42,6 @@ class SentenceEncoder(nn.Module):
         super(SentenceEncoder, self).__init__()
         self.hidden_size = hidden_size
         self.source_size = source_size
-        self.embed_source_s = nn.Embedding(source_size, hidden_size, padding_idx=0)
         self.drop_source_s = nn.Dropout(p=0.2)
         self.lstm_source_s = nn.LSTMCell(hidden_size, hidden_size)
 
@@ -86,7 +85,12 @@ class SentenceDecoder(nn.Module):
         self.drop_target_doc = nn.Dropout(p=0.2)
         self.lstm_target_doc = nn.LSTMCell(hidden_size, hidden_size)
 
-    def forward(self, s_hx, w_hx, w_cx):
-        s_hx = self.drop_target_doc(s_hx)
-        s_hx, s_cx = self.lstm_target_doc(s_hx, (w_hx, w_cx) )
+    def forward(self, w_hx, s_hx, s_cx):
+        w_hx = self.drop_target_doc(w_hx)
+        s_hx, s_cx = self.lstm_target_doc(w_hx, (s_hx, s_cx) )
         return s_hx, s_cx
+
+#    def forward(self, s_hx, w_hx, w_cx):
+#        s_hx = self.drop_target_doc(s_hx)
+#        s_hx, s_cx = self.lstm_target_doc(s_hx, (w_hx, w_cx) )
+#        return s_hx, s_cx
