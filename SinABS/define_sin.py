@@ -22,9 +22,9 @@ args = parser.parse_args()
 
 english_vocab = {}
 
-train_doc_num = args.train_doc_num
-batch_size = args.batch_size
-hidden_size = args.hidden_size
+train_doc_num = int(args.train_doc_num)
+batch_size = int(args.batch_size)
+hidden_size = int(args.hidden_size)
 if args.device:
     device = torch.device('cuda:'+ str(args.device))
 else:

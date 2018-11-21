@@ -30,6 +30,7 @@ def result(encoder, decoder, source_doc):
 
     ds_hx, ds_cx = es_hx, es_cx
     word_id = torch.tensor( [ english_vocab["<bod>"] ]).cuda(device=device)
+
     result_d = ""
     while(int(word_id) != english_vocab["<eod>"] ):
         loop_w = 0
@@ -41,19 +42,20 @@ def result(encoder, decoder, source_doc):
             dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
             word_id = torch.tensor([ torch.argmax(decoder.w_decoder.linear(dw_hx), dim=1).data[0]]).cuda(device=device)
             word = [k for k, v in english_vocab.items() if v == word_id ]
+            print(word)
             result_s.append(word)
-            if loop_w >= 50:
+            if loop_w >= 10:
                 break
             loop_w += 1
         loop_s += 1
         print(result_s)
-        ds_hx, ds_cx = decoder.s_decoder(ds_hx, dw_hx, dw_cx)
+        ds_hx, ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
     print(result_d)
     return result_d
 
 if __name__ == '__main__':
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("SinABS-10.model"))
+    model.load_state_dict(torch.load("19990-4.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for i in range(len(english_paths)):
