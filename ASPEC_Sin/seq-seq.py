@@ -27,18 +27,18 @@ def train(encoder, decoder, source_doc, target_doc):
     for i in range(0, max_dsn):
         lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda(device=device)
         for words in lines:
-            #before_ew_hx , before_ew_cx = ew_hx , ew_cx
+            before_ew_hx , before_ew_cx = ew_hx , ew_cx
             ew_hx , ew_cx = encoder.w_encoder(words, ew_hx, ew_cx)
-            #w_mask = create_mask(words)
-            #ew_hx = torch.where(w_mask == 0, before_ew_hx, ew_hx)
-            #ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
-        before_es_hx, before_es_cx = es_hx, es_cx
+            w_mask = create_mask(words)
+            ew_hx = torch.where(w_mask == 0, before_ew_hx, ew_hx)
+            ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
+        #before_es_hx, before_es_cx = es_hx, es_cx
         #s_mask = create_mask(lines[0])
-        es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
+        #es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
         #es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
         #es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
 
-    ds_hx, ds_cx = es_hx, es_cx
+    #ds_hx, ds_cx = es_hx, es_cx
 
     for i in range(0, max_dtn):
         dw_hx, dw_cx = ds_hx, ds_cx
@@ -47,15 +47,15 @@ def train(encoder, decoder, source_doc, target_doc):
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
         for words_f, word_t in zip(lines_f_last, lines_f_last):
-            #before_dw_hx, before_dw_cx = dw_hx, dw_cx
+            before_dw_hx, before_dw_cx = dw_hx, dw_cx
             dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
-            #w_mask = create_mask(words_f)
-            #dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
-            #dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
+            w_mask = create_mask(words_f)
+            dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
+            dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
             loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
-        #uubefore_ds_hx, before_ds_cx = ds_hx, ds_cx
+        #before_ds_hx, before_ds_cx = ds_hx, ds_cx
         #s_mask = create_mask(lines[0])
-        ds_hx , ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
+        #ds_hx , ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
         #ds_hx = torch.where(s_mask == 0, before_ds_hx, ds_hx)
         #ds_cx = torch.where(s_mask == 0, before_ds_cx, ds_cx)
     return loss

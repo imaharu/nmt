@@ -22,6 +22,7 @@ def result(encoder, decoder, source_doc):
     es_hx, es_cx = encoder.s_encoder.initHidden()
     max_dsn =  max([*map(lambda x: len(x), source_doc )])
     for i in range(0, max_dsn):
+        ew_hx, ew_cx = es_hx, es_cx
         line = torch.tensor([ x[i] for x in source_doc ]).t().cuda(device=device)
         for word in line:
             ew_hx , ew_cx = encoder.w_encoder(word, ew_hx, ew_cx)
@@ -45,6 +46,7 @@ def result(encoder, decoder, source_doc):
             word_id = torch.tensor([ torch.argmax(decoder.w_decoder.linear(dw_hx), dim=1).data[0]]).cuda(device=device)
             dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
             word = [k for k, v in target_vocab.items() if v == word_id ]
+            print(word)
             if (int(word_id) == target_vocab["<teos>"]):
                 break
             result_s.append(word)
@@ -55,7 +57,7 @@ def result(encoder, decoder, source_doc):
 
 if __name__ == '__main__':
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("no_mask-15.model"))
+    model.load_state_dict(torch.load("20000-15.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for doc_num in range(100):

@@ -26,6 +26,7 @@ def train(encoder, decoder, source_doc, target_doc):
     max_dtn =  max([*map(lambda x: len(x), target_docs )])
     for i in range(0, max_dsn):
         lines = torch.tensor([ x[i]  for x in source_doc ]).t().cuda(device=device)
+        ew_hx, ew_cx = es_hx, es_cx
         for words in lines:
             before_ew_hx , before_ew_cx = ew_hx , ew_cx
             ew_hx , ew_cx = encoder.w_encoder(words, ew_hx, ew_cx)
