@@ -20,24 +20,35 @@ parser.add_argument("-de", "--device", help="device")
 args = parser.parse_args()
 ##### end #####
 
-english_vocab = {}
+source_vocab = {}
+target_vocab = {}
+if args.train_doc_num:
+    train_doc_num = int(args.train_doc_num)
 
-train_doc_num = int(args.train_doc_num)
-batch_size = int(args.batch_size)
-hidden_size = int(args.hidden_size)
+if args.batch_size:
+    batch_size = int(args.batch_size)
+
+if args.hidden_size:
+    hidden_size = int(args.hidden_size)
+
 if args.device:
     device = torch.device('cuda:'+ str(args.device))
 else:
     device = torch.device("cuda:0")
 
-data_path = os.environ["cnn_unk"]
+data_path = os.environ["aspec_unk"]
 
 if not args.new:
-    with open('aspec.dump', 'rb') as f:
-        english_vocab = pickle.load(f)
+    with open('en.dump', 'rb') as f:
+        source_vocab = pickle.load(f)
+    with open('ja.dump', 'rb') as f:
+        target_vocab = pickle.load(f)
 else:
-    get_dict(english_paths, english_vocab)
+    source_vocab = get_dict(str(data_path) + "/train.en", source_vocab)
+    target_vocab = get_dict(str(data_path) + "/train.ja", target_vocab)
 
-source_size = len(english_vocab) + 1
-target_size = len(english_vocab) + 1
-
+source_size = len(source_vocab) + 1
+target_size = len(target_vocab) + 1
+sfn = str(data_path)  + "/train.en"
+tfn = str(data_path)  + "/train.ja"
+test_file = str(data_path) + "/test.en"

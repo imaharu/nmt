@@ -89,8 +89,3 @@ class SentenceDecoder(nn.Module):
         w_hx = self.drop_target_doc(w_hx)
         s_hx, s_cx = self.lstm_target_doc(w_hx, (s_hx, s_cx) )
         return s_hx, s_cx
-
-#    def forward(self, s_hx, w_hx, w_cx):
-#        s_hx = self.drop_target_doc(s_hx)
-#        s_hx, s_cx = self.lstm_target_doc(s_hx, (w_hx, w_cx) )
-#        return s_hx, s_cx

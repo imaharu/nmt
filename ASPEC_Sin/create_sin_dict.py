@@ -1,35 +1,29 @@
 import glob
 import linecache
-from cnn_data import *
 
-def get_dict(language_files, vocab):
+def get_dict(file_name, vocab):
     vocab['<unk>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
     vocab['<bod>'] = len(vocab) + 1
     vocab['<eod>'] = len(vocab) + 1
-    i = 0
-    for filename in language_files:
-        story_lines = [ line.split() for line in separate_source_data(filename) ]
-        highlights_lines = [ line.split() for line in separate_target_data(filename) ]
-        for lines in story_lines:
-            for word in lines:
+
+    with open(file_name) as f:
+        docs = f.read().strip().split("\n")
+        for doc in docs:
+            for word in doc.split():
                 if word not in vocab:
                     vocab[word] = len(vocab) + 1
+    return vocab
 
-        for lines in highlights_lines:
-            for word in lines:
-                if word not in vocab:
-                    vocab[word] = len(vocab) + 1
-        i +=  1
-
-def get_source_doc(filename, vocab_dict):
-    story = separate_source_data(filename)
-    doc_source = [ [ vocab_dict[word] if word in vocab_dict else vocab_dict["<unk>"] for word in line.split() ] for line in story ]
+def get_source_doc(filename, ln, vocab_dict):
+    source_doc = linecache.getline(filename, int(ln))
+    doc_source = [  vocab_dict[word] if word in vocab_dict else vocab_dict["<unk>"] for word in source_doc.split()   ]
     return doc_source
 
-def get_target_doc(filename, vocab_dict):
-    highlight = separate_target_data(filename)
-    doc_target = [ [ vocab_dict[word] for word in line.split() ] for line in highlight ]
+
+def get_target_doc(filename, ln, vocab_dict):
+    target_doc = linecache.getline(filename, int(ln))
+    doc_target = [  vocab_dict[word] if word in vocab_dict else vocab_dict["<unk>"] for word in target_doc.split()   ]
     return doc_target
 
 def sentence_padding(docs, max_ds_num):

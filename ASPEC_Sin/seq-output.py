@@ -55,7 +55,7 @@ def result(encoder, decoder, source_doc):
 
 if __name__ == '__main__':
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("no_mask-15.model"))
+    model.load_state_dict(torch.load("20000-15.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for doc_num in range(100):
