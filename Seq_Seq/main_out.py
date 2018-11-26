@@ -28,10 +28,10 @@ def result(encoder, decoder, source_doc):
     word_id = torch.tensor( [ target_vocab["<bos>"] ]).cuda(device=device)
     result_s = []
     while(1):
+        dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
         word_id = torch.tensor([ torch.argmax(decoder.w_decoder.linear(dw_hx), dim=1).data[0]]).cuda(device=device)
         word = translate_vocab[int(word_id)]
 
-        dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
         if (int(word_id) == target_vocab["<teos>"]):
             break
         result_s.append(word)

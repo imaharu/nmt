@@ -53,7 +53,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(10):
+    for epoch in range(20):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
@@ -70,7 +70,6 @@ if __name__ == '__main__':
             # add <teos> to target_docs
 
             target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
-            #target_docs = [ [ s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
 
             target_wpadding = word_padding(target_docs, max_doc_target_num)
 
