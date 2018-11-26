@@ -28,11 +28,10 @@ def result(encoder, decoder, source_doc):
     word_id = torch.tensor( [ target_vocab["<bos>"] ]).cuda(device=device)
     result_s = []
     while(1):
-        dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
         word_id = torch.tensor([ torch.argmax(decoder.w_decoder.linear(dw_hx), dim=1).data[0]]).cuda(device=device)
         word = translate_vocab[int(word_id)]
-#        print(word)
 
+        dw_hx, dw_cx = decoder.w_decoder(word_id, dw_hx, dw_cx)
         if (int(word_id) == target_vocab["<teos>"]):
             break
         result_s.append(word)
@@ -44,7 +43,7 @@ def result(encoder, decoder, source_doc):
 if __name__ == '__main__':
     translate_vocab = {v:k for k,v in target_vocab.items()}
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("nubos-10.model"))
+    model.load_state_dict(torch.load("bos-10.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for doc_num in range(5):
