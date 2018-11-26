@@ -1,10 +1,23 @@
 import glob
 import linecache
 
-def get_dict(file_name, vocab):
+def get_source_dict(file_name, vocab):
+    vocab['<unk>'] = len(vocab) + 1
+    vocab['<seos>'] = len(vocab) + 1
+    vocab['<bod>'] = len(vocab) + 1
+
+    with open(file_name) as f:
+        docs = f.read().strip().split("\n")
+        for doc in docs:
+            for word in doc.split():
+                if word not in vocab:
+                    vocab[word] = len(vocab) + 1
+    return vocab
+
+def get_target_dict(file_name, vocab):
     vocab['<unk>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
-    vocab['<bod>'] = len(vocab) + 1
+    vocab['<bos>'] = len(vocab) + 1
     vocab['<eod>'] = len(vocab) + 1
 
     with open(file_name) as f:

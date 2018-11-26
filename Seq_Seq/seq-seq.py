@@ -38,13 +38,13 @@ def train(encoder, decoder, source_doc, target_doc):
         # t -> true, f -> false
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
-        for words_f, word_t in zip(lines_f_last, lines_f_last):
-            before_dw_hx, before_dw_cx = dw_hx, dw_cx
+        for words_f, words_t in zip(lines_f_last, lines_t_last):
+            #before_dw_hx, before_dw_cx = dw_hx, dw_cx
             dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
-            w_mask = create_mask(words_f)
-            dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
-            dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
-            loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
+            #w_mask = create_mask(words_f)
+            #dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
+            #dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
+            loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), words_t , ignore_index=0)
     return loss
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(15):
+    for epoch in range(10):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
@@ -63,13 +63,14 @@ if __name__ == '__main__':
             target_docs = [ [ get_target_doc(tfn, doc_num + 1, target_vocab) ] for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
-            source_docs = [  [ s + [ source_vocab["<teos>"] ] for s in t_d ] for t_d in source_docs ]
+#            source_docs = [  [ s + [ source_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs ]
             source_wpadding = word_padding(source_docs, max_doc_sentence_num)
 
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
             # add <teos> to target_docs
 
-            target_docs = [ [ s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
+            target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
+            #target_docs = [ [ s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_wpadding = word_padding(target_docs, max_doc_target_num)
 
             optimizer.zero_grad()
@@ -77,8 +78,8 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1)  % 15 == 0:
-            outfile = "Only_word-" + str(epoch + 1) + ".model"
+        if (epoch + 1)  % 10 == 0:
+            outfile = "nubos-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
