@@ -63,7 +63,7 @@ if __name__ == '__main__':
             target_docs = [ [ get_target_doc(tfn, doc_num + 1, target_vocab) ] for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
-#            source_docs = [  [ s + [ source_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs ]
+            source_docs = [  [ s + [ source_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs ]
             source_wpadding = word_padding(source_docs, max_doc_sentence_num)
 
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
@@ -71,6 +71,7 @@ if __name__ == '__main__':
 
             target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             #target_docs = [ [ s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
+
             target_wpadding = word_padding(target_docs, max_doc_target_num)
 
             optimizer.zero_grad()
@@ -79,7 +80,7 @@ if __name__ == '__main__':
             optimizer.step()
 
         if (epoch + 1)  % 10 == 0:
-            outfile = "nubos-" + str(epoch + 1) + ".model"
+            outfile = "enc_eos-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

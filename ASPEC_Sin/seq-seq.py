@@ -38,7 +38,7 @@ def train(encoder, decoder, source_doc, target_doc):
         #es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
         #es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
 
-    #ds_hx, ds_cx = es_hx, es_cx
+    ds_hx, ds_cx = es_hx, es_cx
 
     for i in range(0, max_dtn):
         dw_hx, dw_cx = ds_hx, ds_cx

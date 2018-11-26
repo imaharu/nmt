@@ -47,7 +47,7 @@ def train(encoder, decoder, source_doc, target_doc):
         # t -> true, f -> false
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
-        for words_f, word_t in zip(lines_f_last, lines_f_last):
+        for words_f, word_t in zip(lines_f_last, lines_t_last):
             before_dw_hx, before_dw_cx = dw_hx, dw_cx
             dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
             w_mask = create_mask(words_f)
