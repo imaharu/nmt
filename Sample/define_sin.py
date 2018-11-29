@@ -36,8 +36,7 @@ if args.device:
 else:
     device = torch.device("cuda:0")
 
-#data_path = os.environ["aspec_unk"]
-data_path = "/home/ochi/Lab/Seq_Seq/train_data"
+data_path = os.environ["aspec_unk"]
 
 if not args.new:
     with open('en.dump', 'rb') as f:
@@ -45,8 +44,8 @@ if not args.new:
     with open('ja.dump', 'rb') as f:
         target_vocab = pickle.load(f)
 else:
-    source_vocab = get_source_dict(str(data_path) + "/train.en", source_vocab)
-    target_vocab = get_target_dict(str(data_path) + "/train.ja", target_vocab)
+    source_vocab = get_dict(str(data_path) + "/train.en", source_vocab)
+    target_vocab = get_dict(str(data_path) + "/train.ja", target_vocab)
 
 source_size = len(source_vocab) + 1
 target_size = len(target_vocab) + 1
