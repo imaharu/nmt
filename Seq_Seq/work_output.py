@@ -32,6 +32,7 @@ def result(encoder, decoder, source_doc):
     word_id = torch.tensor( [ target_vocab["<bos>"] ]).cuda(device=device)
 
     result_d = []
+    flag = 0
     while(1):
         loop_w = 0
         result_s = []
@@ -42,13 +43,19 @@ def result(encoder, decoder, source_doc):
             word = translate_vocab[int(word_id)]
             if (int(word_id) == target_vocab["<teos>"]):
                 break
+            if (int(word_id) == target_vocab["<eod>"]):
+                flag = 1
             result_s.append(word)
             loop_w += 1
             if loop_w == 50:
                 break
         ds_hx, ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
-        if loop_s == 2:
+
+        if loop_s == 3:
             break
+        elif flag == 1:
+            break
+
         result_d.append("".join(result_s))
         loop_s += 1
     return result_d
@@ -56,11 +63,13 @@ def result(encoder, decoder, source_doc):
 if __name__ == '__main__':
     translate_vocab = {v:k for k,v in target_vocab.items()}
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("work-10.model"))
+    model.load_state_dict(torch.load("work-20.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
-    for doc_num in range(3):
+    for doc_num in range(1):
         source_doc = [ [ get_source_doc(test_file, doc_num + 1, source_vocab) ] ]
         source_doc = [  [ s + [ source_vocab["<seos>"] ] for s in t_d ] for t_d in source_doc ]
+        for source in source_doc:
+            source.append([ source_vocab["<bod>"] ])
         result_d = result(model.encoder, model.decoder, source_doc)
         print(result_d)
