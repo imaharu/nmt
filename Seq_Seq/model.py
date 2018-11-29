@@ -45,7 +45,7 @@ class SentenceEncoder(nn.Module):
         self.lstm_source_s = nn.LSTMCell(hidden_size, hidden_size)
 
     def forward(self, w_hx, s_hx, s_cx):
-        w_hx = self.drop_source_s(s_hx)
+        w_hx = self.drop_source_s(w_hx)
         s_hx, s_cx = self.lstm_source_s(w_hx, (s_hx, s_cx) )
         return s_hx, s_cx
 

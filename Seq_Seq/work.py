@@ -35,7 +35,7 @@ def train(encoder, decoder, source_doc, target_doc):
             ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
         before_es_hx, before_es_cx = es_hx, es_cx
         s_mask = create_mask(lines[0])
-        es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
+        es_hx, es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
         es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
         es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(15):
+    for epoch in range(20):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
@@ -87,15 +87,15 @@ if __name__ == '__main__':
             target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_wpadding = word_padding(target_docs, max_doc_target_num)
             for target in target_wpadding:
-                target.extend([ [ target_vocab["<eod>"] ,  target_vocab["<teos>"]  ] ] )
+                target.extend([ [ target_vocab["<eod>"], target_vocab["<teos>"]  ] ] )
 
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1)  % 5 == 0:
-            outfile = "20000-" + str(epoch + 1) + ".model"
+        if (epoch + 1)  % 10 == 0:
+            outfile = "work-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
