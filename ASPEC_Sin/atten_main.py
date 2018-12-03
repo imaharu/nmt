@@ -20,6 +20,8 @@ def create_mask(words):
 
 def train(encoder, decoder, source_doc, target_doc):
     loss = 0
+    es_hx_list = []
+    es_mask = []
     ew_hx, ew_cx = encoder.w_encoder.initHidden()
     es_hx, es_cx = encoder.s_encoder.initHidden()
     max_dsn =  max([*map(lambda x: len(x), source_docs )])
@@ -38,8 +40,13 @@ def train(encoder, decoder, source_doc, target_doc):
         es_hx, es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
         es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
         es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
-
+        es_hx_list.append(es_hx)
+        es_mask.append( torch.cat([ lines[0].unsqueeze(-1) ] , 1).unsqueeze(0))
+    es_hx_list = torch.stack(es_hx_list, 0)
+    es_mask = torch.cat(es_mask)
     ds_hx, ds_cx = es_hx, es_cx
+    inf = torch.full((max_dsn, batch_size), float("-inf")).cuda(device=device)
+    inf = torch.unsqueeze(inf, -1)
 
     for i in range(0, max_dtn):
         dw_hx, dw_cx = ds_hx, ds_cx
@@ -47,10 +54,10 @@ def train(encoder, decoder, source_doc, target_doc):
         # t -> true, f -> false
         lines_t_last = lines[1:]
         lines_f_last = lines[:(len(lines) - 1)]
-        for word_f, word_t in zip(lines_f_last, lines_t_last):
+        for words_f, word_t in zip(lines_f_last, lines_t_last):
             before_dw_hx, before_dw_cx = dw_hx, dw_cx
-            dw_hx , dw_cx = decoder.w_decoder(word_f, dw_hx, dw_cx)
-            w_mask = create_mask(word_f)
+            dw_hx , dw_cx = decoder.w_decoder(words_f, dw_hx, dw_cx)
+            w_mask = create_mask(words_f)
             dw_hx = torch.where(w_mask == 0, before_dw_hx, dw_hx)
             dw_cx = torch.where(w_mask == 0, before_dw_cx, dw_cx)
             loss += F.cross_entropy(decoder.w_decoder.linear(dw_hx), word_t , ignore_index=0)
@@ -59,6 +66,7 @@ def train(encoder, decoder, source_doc, target_doc):
         ds_hx , ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
         ds_hx = torch.where(s_mask == 0, before_ds_hx, ds_hx)
         ds_cx = torch.where(s_mask == 0, before_ds_cx, ds_cx)
+        ds_hx = decoder.s_decoder.attention(ds_hx, es_hx_list, es_mask, inf)
     return loss
 
 if __name__ == '__main__':
@@ -86,15 +94,18 @@ if __name__ == '__main__':
             # add <teos> to target_docs
             target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
             target_wpadding = word_padding(target_docs, max_doc_target_num)
+            #for target in target_wpadding:
+            #    target.extend([ [ target_vocab["<eod>"], target_vocab["<teos>"]  ] ] )
             for target in target_wpadding:
                 target.extend([ [ target_vocab["<bos>"], target_vocab["<eod>"]  ] ] )
+
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
             loss.backward()
             optimizer.step()
 
         if (epoch + 1)  % 10 == 0:
-            outfile = "bos-eos-" + str(epoch + 1) + ".model"
+            outfile = "inf-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

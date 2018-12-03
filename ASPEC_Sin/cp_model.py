@@ -91,7 +91,6 @@ class SentenceDecoder(nn.Module):
 
     def attention(self, s_hx, es_hx_list, es_mask, inf):
         dot = (s_hx * es_hx_list).sum(-1, keepdim=True)
-        dot = torch.where(es_mask == 0, inf, dot)
         a_t = F.softmax(dot, 0)
         d = (a_t * es_hx_list).sum(0)
         concat = torch.cat((d, s_hx), 1)

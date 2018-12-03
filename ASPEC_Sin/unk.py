@@ -46,9 +46,8 @@ def unk_file(file_name, unk_dict, f_n):
             docs_c.append(" ".join(concat_line))
         with open("aspec_unk/" + f_n, "w") as w_f:
             w_f.write("\n".join(docs_c))
-
-ja_unk_dict = dict(get_unk_dict(str(data_path + "/train20000.ja"), en_c_vocab))
-en_unk_dict = dict(get_unk_dict(str(data_path + "/train20000.en"), en_c_vocab))
+ja_unk_dict = dict(get_unk_dict(str(data_path + "/train.ja"), en_c_vocab))
+en_unk_dict = dict(get_unk_dict(str(data_path + "/train.en"), en_c_vocab))
 #unk_file(str(data_path + "/train20000.en"), en_unk_dict, "train.en")
 unk_file(str(data_path + "/train20000.ja"), en_unk_dict, "train.ja")
 unk_file(str(data_path + "/test1000.en"), en_unk_dict, "test.en")

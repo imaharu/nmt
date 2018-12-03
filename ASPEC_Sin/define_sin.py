@@ -36,8 +36,7 @@ if args.device:
 else:
     device = torch.device("cuda:0")
 
-#data_path = os.environ["aspec_unk"]
-data_path = "/home/ochi/Lab/Seq_Seq/train_data"
+data_path = "/home/ochi/Lab/ASPEC_Sin/train_data"
 
 if not args.new:
     with open('en.dump', 'rb') as f:

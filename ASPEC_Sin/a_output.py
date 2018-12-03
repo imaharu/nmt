@@ -18,6 +18,8 @@ import time
 def result(encoder, decoder, source_doc):
     loop_s = 0
     loop_w = 0
+    es_hx_list = []
+    es_mask = []
     ew_hx, ew_cx = encoder.w_encoder.initHidden()
     es_hx, es_cx = encoder.s_encoder.initHidden()
     max_dsn =  max([*map(lambda x: len(x), source_doc )])
@@ -28,8 +30,10 @@ def result(encoder, decoder, source_doc):
         for word in line:
             ew_hx , ew_cx = encoder.w_encoder(word, ew_hx, ew_cx)
         es_hx, es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
+        es_hx_list.append(es_hx)
     ds_hx, ds_cx = es_hx, es_cx
 
+    es_hx_list = torch.stack(es_hx_list, 0)
     result_d = []
     flag = 0
     while(1):
@@ -51,6 +55,11 @@ def result(encoder, decoder, source_doc):
             if loop_w == 50:
                 break
         ds_hx, ds_cx = decoder.s_decoder(dw_hx, ds_hx, ds_cx)
+        dot = (ds_hx * es_hx_list).sum(-1, keepdim=True)
+        a_t = F.softmax(dot, 0)
+        d = (a_t * es_hx_list).sum(0)
+        concat = torch.cat((d, ds_hx), 1)
+        ds_hx = F.tanh(decoder.s_decoder.attention_linear(concat))
         if loop_s == 5:
             break
         if flag == 1:
@@ -62,7 +71,7 @@ def result(encoder, decoder, source_doc):
 if __name__ == '__main__':
     translate_vocab = {v:k for k,v in target_vocab.items()}
     model = HierachicalEncoderDecoder(source_size, target_size, hidden_size).to(device)
-    model.load_state_dict(torch.load("bos-eos-10.model"))
+    model.load_state_dict(torch.load("attention-10.model"))
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
     for doc_num in range(1):
