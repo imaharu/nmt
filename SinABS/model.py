@@ -15,7 +15,7 @@ class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):
         super(Encoder, self).__init__()
         self.w_encoder = WordEncoder(source_size, hidden_size)
-        self.s_encoder = SentenceEncoder(source_size, hidden_size)
+        self.s_encoder = SentenceEncoder(hidden_size)
 
 class WordEncoder(nn.Module):
     def __init__(self, source_size, hidden_size):
@@ -38,16 +38,15 @@ class WordEncoder(nn.Module):
         return hx, cx
 
 class SentenceEncoder(nn.Module):
-    def __init__(self, source_size, hidden_size):
+    def __init__(self, hidden_size):
         super(SentenceEncoder, self).__init__()
         self.hidden_size = hidden_size
-        self.source_size = source_size
         self.drop_source_s = nn.Dropout(p=0.2)
         self.lstm_source_s = nn.LSTMCell(hidden_size, hidden_size)
 
-    def forward(self, s_hx, w_hx, w_cx):
-        w_hx = self.drop_source_s(s_hx)
-        s_hx, s_cx = self.lstm_source_s(s_hx, (w_hx, w_cx) )
+    def forward(self, w_hx, s_hx, s_cx):
+        w_hx = self.drop_source_s(w_hx)
+        s_hx, s_cx = self.lstm_source_s(w_hx, (s_hx, s_cx) )
         return s_hx, s_cx
 
     def initHidden(self):
@@ -59,7 +58,7 @@ class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
         self.w_decoder = WordDecoder(target_size, hidden_size)
-        self.s_decoder = SentenceDecoder(target_size, hidden_size)
+        self.s_decoder = SentenceDecoder(hidden_size)
 
 class WordDecoder(nn.Module):
     def __init__(self, target_size, hidden_size):
@@ -78,19 +77,23 @@ class WordDecoder(nn.Module):
         return w_hx, w_cx
 
 class SentenceDecoder(nn.Module):
-    def __init__(self, target_size, hidden_size):
+    def __init__(self, hidden_size):
         super(SentenceDecoder, self).__init__()
         self.hidden_size = hidden_size
-        self.target_size = target_size
         self.drop_target_doc = nn.Dropout(p=0.2)
         self.lstm_target_doc = nn.LSTMCell(hidden_size, hidden_size)
+        self.attention_linear = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(self, w_hx, s_hx, s_cx):
         w_hx = self.drop_target_doc(w_hx)
         s_hx, s_cx = self.lstm_target_doc(w_hx, (s_hx, s_cx) )
         return s_hx, s_cx
 
-#    def forward(self, s_hx, w_hx, w_cx):
-#        s_hx = self.drop_target_doc(s_hx)
-#        s_hx, s_cx = self.lstm_target_doc(s_hx, (w_hx, w_cx) )
-#        return s_hx, s_cx
+    def attention(self, s_hx, es_hx_list, es_mask, inf):
+        dot = (s_hx * es_hx_list).sum(-1, keepdim=True)
+        dot = torch.where(es_mask == 0, inf, dot)
+        a_t = F.softmax(dot, 0)
+        d = (a_t * es_hx_list).sum(0)
+        concat = torch.cat((d, s_hx), 1)
+        hx_attention = F.tanh(self.attention_linear(concat))
+        return hx_attention

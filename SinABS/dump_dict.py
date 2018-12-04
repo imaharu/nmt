@@ -7,12 +7,10 @@ import pickle
 
 english_vocab = {}
 
-train_doc_num = 19990
+train_doc_num = 19900
 
-data_path = os.environ["cnn_unk"]
-
+data_path = os.environ["cnn_unk"] + "/train"
 english_paths = sorted(glob.glob(data_path + "/*.story"))[0:train_doc_num]
-
 get_dict(english_paths, english_vocab)
 
 with open('cnn.dump', 'wb') as f:

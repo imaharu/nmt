@@ -37,12 +37,11 @@ def train(encoder, decoder, source_doc, target_doc):
             ew_cx = torch.where(w_mask == 0, before_ew_cx, ew_cx)
         before_es_hx, before_es_cx = es_hx, es_cx
         s_mask = create_mask(lines[0])
-        es_hx , es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
+        es_hx, es_cx = encoder.s_encoder(ew_hx, es_hx, es_cx)
         es_hx = torch.where(s_mask == 0, before_es_hx, es_hx)
         es_cx = torch.where(s_mask == 0, before_es_cx, es_cx)
         es_hx_list.append(es_hx)
         es_mask.append( torch.cat([ lines[0].unsqueeze(-1) ] , 1).unsqueeze(0))
-
     es_hx_list = torch.stack(es_hx_list, 0)
     es_mask = torch.cat(es_mask)
     ds_hx, ds_cx = es_hx, es_cx
@@ -76,40 +75,37 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(30):
+    for epoch in range(10):
         target_docs = []
         source_docs = []
         print("epoch",epoch + 1)
-        indexes = torch.randperm(train_doc_num)[0:10000]
+        indexes = torch.randperm(train_doc_num)
         for i in range(0, train_doc_num, batch_size):
-            source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
-            target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
+            source_docs = [ [ get_source_doc(sfn, doc_num + 1, source_vocab) ] for doc_num in indexes[i:i+batch_size]]
+            target_docs = [ [ get_target_doc(tfn, doc_num + 1, target_vocab) ] for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
-            print(max_doc_sentence_num)
-            exit()
-            source_docs = [ [ s + [ english_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs]
-            source_spadding = sentence_padding(source_docs, max_doc_sentence_num)
-            source_wpadding = word_padding(source_spadding, max_doc_sentence_num)
+            source_docs = [  [ s + [ source_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs ]
+            source_wpadding = word_padding(source_docs, max_doc_sentence_num)
             for source in source_wpadding:
-                source.append([ english_vocab["<eod>"] ])
+                source.append([ source_vocab["<bod>"] ])
 
             max_doc_target_num =  max([*map(lambda x: len(x), target_docs )])
             # add <teos> to target_docs
-
-            target_docs = [ [ [english_vocab["<bos>"]] + s + [ english_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
-            target_spadding = sentence_padding(target_docs, max_doc_target_num)
-            target_wpadding = word_padding(target_spadding, max_doc_target_num)
+            target_docs = [ [ [target_vocab["<bos>"] ] + s + [ target_vocab["<teos>"] ] for s in t_d ] for t_d in target_docs]
+            target_wpadding = word_padding(target_docs, max_doc_target_num)
+            #for target in target_wpadding:
+            #    target.extend([ [ target_vocab["<eod>"], target_vocab["<teos>"]  ] ] )
             for target in target_wpadding:
-                target.extend([ [english_vocab["<bos>"] ,  english_vocab["<eod>"]  ] ] )
+                target.extend([ [ target_vocab["<bos>"], target_vocab["<eod>"]  ] ] )
+
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, source_wpadding,target_wpadding)
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1)  % 5 == 0:
-            outfile = "models/" + str(train_doc_num) + "-" + str(epoch + 1) + ".model"
+        if (epoch + 1)  % 10 == 0:
+            outfile = "inf-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
-            exit()
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

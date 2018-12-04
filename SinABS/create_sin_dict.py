@@ -4,8 +4,9 @@ from cnn_data import *
 
 def get_dict(language_files, vocab):
     vocab['<unk>'] = len(vocab) + 1
+    vocab['<seos>'] = len(vocab) + 1
     vocab['<teos>'] = len(vocab) + 1
-    vocab['<bod>'] = len(vocab) + 1
+    vocab['<bos>'] = len(vocab) + 1
     vocab['<eod>'] = len(vocab) + 1
     i = 0
     for filename in language_files:
