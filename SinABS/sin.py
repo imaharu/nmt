@@ -81,13 +81,11 @@ if __name__ == '__main__':
         source_docs = []
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_doc_num)[0:10000]
-        for i in range(0, train_doc_num, batch_size):
+        for i in range(0, 10000, batch_size):
             source_docs = [ get_source_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             target_docs = [ get_target_doc(english_paths[doc_num], english_vocab) for doc_num in indexes[i:i+batch_size]]
             # source_docs
             max_doc_sentence_num =  max([*map(lambda x: len(x), source_docs )])
-            print(max_doc_sentence_num)
-            exit()
             source_docs = [ [ s + [ english_vocab["<seos>"] ] for s in t_d ] for t_d in source_docs]
             source_spadding = sentence_padding(source_docs, max_doc_sentence_num)
             source_wpadding = word_padding(source_spadding, max_doc_sentence_num)
@@ -110,6 +108,5 @@ if __name__ == '__main__':
         if (epoch + 1)  % 5 == 0:
             outfile = "models/" + str(train_doc_num) + "-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
-            exit()
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
