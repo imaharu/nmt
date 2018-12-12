@@ -86,7 +86,7 @@ def output(encoder, decoder, output_input_line):
             break
         hx, cx = decoder(word_id, hx, cx)
 
-        word_id = torch.tensor([ torch.argmax(F.softmax(decoder.linear(hx), dim=1).data[0]) ]).cuda()
+        word_id = torch.tensor([ torch.argmax(decoder.linear(hx), dim=1) ]).cuda()
         loop += 1
         if int(word_id) != target_vocab['<eos>'] and int(word_id) != 0:
             result.append(translate_words[int(word_id)])
