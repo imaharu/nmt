@@ -94,7 +94,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
+    optimizer = torch.optim.Adam( model.parameters(), weight_decay=1e-4)
     for epoch in range(15):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 15 == 0:
             outfile = "model-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start

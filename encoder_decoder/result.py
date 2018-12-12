@@ -62,7 +62,8 @@ class Encoder_Decoder(nn.Module):
                 break
             target_k = self.embed_target(word_id)
             hx, cx = self.lstm_target(target_k, (hx, cx) )
-            word_id = torch.tensor([ torch.argmax(F.softmax(self.linear(hx), dim=1).data[0]) ]).cuda()
+            #word_id = torch.tensor([ torch.argmax(F.softmax(self.linear(hx), dim=1).data[0]) ]).cuda()
+            word_id = torch.tensor([ torch.argmax(self.linear(hx), dim=1) ]).cuda()
             loop += 1
             if int(word_id) != target_vocab['<eos>'] and int(word_id) != 0:
                 result.append(translate_words[int(word_id)])
