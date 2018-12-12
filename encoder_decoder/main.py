@@ -44,7 +44,7 @@ class Encoder(nn.Module):
         source_k = self.drop_source(source_k)
         hx, cx = self.lstm_source(source_k, (hx, cx) )
         return hx, cx
-    
+
     def initHidden(self):
         hx = torch.zeros(batch_size, self.hidden_size).cuda()
         cx = torch.zeros(batch_size, self.hidden_size).cuda()
@@ -73,7 +73,7 @@ def train(encoder, decoder, source_lines, target_lines):
     max_num =  len(target_lines) # paddingの数
     target_lines_not_last = target_lines[:(max_num-1)]
     target_lines_next = target_lines[1:]
-    
+
     hx, cx = encoder.initHidden()
 
     for sentence_words in source_lines:
@@ -95,8 +95,7 @@ if __name__ == '__main__':
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
-
-    for epoch in range(20):
+    for epoch in range(15):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):

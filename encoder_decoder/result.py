@@ -11,7 +11,7 @@ import torch.optim as optim
 import os
 
 train_num, hidden_size= 20000, 256
-test_num = 1000
+test_num = 100
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -69,13 +69,12 @@ class Encoder_Decoder(nn.Module):
         return result
 
 model = Encoder_Decoder(ev, jv, hidden_size)
-model.load_state_dict(torch.load("last-20.model"))
+model.load_state_dict(torch.load("last-15.model"))
 
-optimizer = torch.optim.Adam(model.parameters())
 device = torch.device('cuda:0')
 model = model.to(device)
 
-result_file_ja = os.environ["OUTPUT_DIRECTORY"] + "/model.txt"
+result_file_ja = "text"
 result_file = open(result_file_ja, 'w', encoding="utf-8")
 
 ## 出力結果を得る

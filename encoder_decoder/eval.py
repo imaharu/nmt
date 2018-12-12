@@ -11,7 +11,7 @@ import torch.optim as optim
 import os
 
 train_num, hidden_size= 20000, 256
-test_num = 1000
+test_num = 100
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
 target_vocab ,target_lines ,target_lines_number = {}, {}, {}
@@ -46,7 +46,7 @@ class Encoder(nn.Module):
         source_k = self.drop_source(source_k)
         hx, cx = self.lstm_source(source_k, (hx, cx) )
         return hx, cx
-    
+
     def initHidden(self):
         hx = torch.zeros(1, self.hidden_size).cuda()
         cx = torch.zeros(1, self.hidden_size).cuda()
@@ -79,7 +79,7 @@ def output(encoder, decoder, output_input_line):
         else:
             word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
         hx, cx = encoder(word_id, hx, cx)
-        word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
+    word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
 
     while(int(word_id) != target_vocab['<eos>']):
         if loop >= 50:
@@ -96,11 +96,10 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("model-20.model"))
+    model.load_state_dict(torch.load("model-15.model"))
     model.eval()
-    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
-    
-    result_file_ja = os.environ["OUTPUT_DIRECTORY"] + "/model.txt"
+
+    result_file_ja = "text"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):
