@@ -90,7 +90,7 @@ def output(encoder, decoder, output_input_line):
         else:
             word_id = torch.tensor([ input_vocab["<unk>"] ]).cuda()
         hs, cs = encoder(word_id, hs, cs)
-        word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
+        #word_id = torch.tensor( [ target_vocab["<bos>"] ] ).cuda()
         list_hs.append(hs)
 
     list_hs = torch.stack(list_hs, 0)
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     model.eval()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    result_file_ja = os.environ["OUTPUT_DIRECTORY"] + "/attention.txt"
+    result_file_ja = "/home/ochi/src/data/blue/eval.txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):

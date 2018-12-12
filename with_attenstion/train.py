@@ -8,7 +8,7 @@ import time
 from get_data import *
 import torch.optim as optim
 
-train_num, hidden_size, batch_size = 20000, 256, 50
+train_num, hidden_size, batch_size = 20000, 256, 100
 # train_num, hidden_size, batch_size = 10, 4, 2
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
         source_k = self.drop_source(source_k)
         hs, cs = self.lstm_source(source_k, (hs, cs) )
         return hs, cs
-    
+
     def initHidden(self):
         hs = torch.zeros(batch_size, self.hidden_size).cuda()
         cs = torch.zeros(batch_size, self.hidden_size).cuda()
@@ -91,8 +91,8 @@ def train(encoder, decoder, source_lines, target_lines):
         before_cs = cs
         hs, cs = encoder(sentence_words, hs, cs)
         mask = create_mask(sentence_words)
-        hx = torch.where(mask == 0, before_hs, hs)
-        cx = torch.where(mask == 0, before_cs, cs)
+        hs = torch.where(mask == 0, before_hs, hs)
+        cs = torch.where(mask == 0, before_cs, cs)
         list_hs.append(hs)
         masks = torch.cat( [ sentence_words.unsqueeze(-1) ] , 1)
         list_source_mask.append( torch.unsqueeze(masks, 0))
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(20):
+    for epoch in range(10):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -140,7 +140,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 10 == 0:
             outfile = "attention-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
