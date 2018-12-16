@@ -8,7 +8,6 @@ import torch.optim as optim
 from operator import itemgetter
 from define_variable import *
 from model import *
-import os
 
 def output(encoder, decoder, output_input_line):
     result = []
