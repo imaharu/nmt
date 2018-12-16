@@ -36,7 +36,7 @@ def get_train_data_target(train_num, target_vocab, target_lines_number, target_l
         translate_words[id + 2] = "<eos>"
 
 def get_test_data_target(test_num, test_input_lines):
-    with open("../train_data/test1000.en",'r',encoding='utf-8') as f:
+    with open("test.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
         i = 0
         for line in lines_en:

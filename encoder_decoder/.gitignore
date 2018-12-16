@@ -3,6 +3,7 @@ __pycache__/get_data.cpython-36.pyc
 *.model
 __pycache__
 test.en
+test.ja
 train.en
 train.ja
 text

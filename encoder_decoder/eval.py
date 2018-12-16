@@ -41,7 +41,7 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load("model-15.model"))
     model.eval()
 
-    result_file_ja = "text"
+    result_file_ja = "result"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):
