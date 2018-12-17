@@ -18,14 +18,13 @@ def train(encoder, decoder, source_lines, target_lines):
 
     lhx_layer = torch.stack([ encoder.initHx() for i in range(layer_num) ], 0)
     lcx_layer = torch.stack([ encoder.initCx() for i in range(layer_num) ], 0)
-    exit()
 
     for sentence_words in source_lines:
         lhx_layer, lcx_layer = encoder(sentence_words, lhx_layer, lcx_layer)
 
     for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
-        hx, cx = decoder(target_sentence_words, hx, cx)
-        loss += F.cross_entropy(decoder.linear(hx), target_sentence_words_next, ignore_index=0)
+        lhx_layer, lcx_layer = decoder(target_sentence_words, lhx_layer, lcx_layer)
+        loss += F.cross_entropy(decoder.linear(lhx_layer[layer_num - 1]), target_sentence_words_next, ignore_index=0)
     return loss
 
 if __name__ == '__main__':

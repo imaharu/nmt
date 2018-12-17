@@ -23,22 +23,23 @@ class Encoder(nn.Module):
     def create_mask(self ,sentence_words):
         return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
-    def multi_layer(self, source_k, mask, hx, cx):
-        layer_num = 3
-        for i in range(1, layer_num + 1):
-            b_hx , b_cx = hx, cx
-            hx, cx = eval("self.lstm" + str(i))(source_k, (hx, cx) )
-            hx = torch.where(mask == 0, b_hx, hx)
-            cx = torch.where(mask == 0, b_cx, cx)
-        return hx, cx
+    def multi_layer(self, source_k, mask, lhx, lcx):
+        for i in range(layer_num):
+            b_hx , b_cx = lhx[i], lcx[i]
+            if i == 0:
+                lhx[i], lcx[i] = eval("self.lstm" + str(i + 1))(source_k, (lhx[i], lcx[i]) )
+            else:
+                lhx[i], lcx[i] = eval("self.lstm" + str(i + 1))(lhx[i - 1], (lhx[i], lcx[i]) )
+            lhx[i] = torch.where(mask == 0, b_hx, lhx[i])
+            lcx[i] = torch.where(mask == 0, b_cx, lcx[i])
+        return lhx, lcx
 
-    def forward(self, sentence_words, hx, cx):
+    def forward(self, sentence_words, lhx, lcx):
         source_k = self.embed_source(sentence_words)
         source_k = self.drop_source(source_k)
-
         mask = self.create_mask(sentence_words)
-        hx, cx = self.multi_layer(source_k, mask ,hx, cx)
-        return hx, cx
+        lhx, lcx = self.multi_layer(source_k, mask ,lhx, lcx)
+        return lhx, lcx
 
     def initHx(self):
         hx = torch.zeros(batch_size, self.hidden_size).cuda()
@@ -62,18 +63,20 @@ class Decoder(nn.Module):
     def create_mask(self ,sentence_words):
         return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
-    def multi_layer(self, target_k, mask, hx, cx):
-        layer_num = 3
-        for i in range(1, layer_num + 1):
-            b_hx , b_cx = hx, cx
-            hx, cx = eval("self.lstm" + str(i))(target_k, (hx, cx) )
-            hx = torch.where(mask == 0, b_hx, hx)
-            cx = torch.where(mask == 0, b_cx, cx)
-        return hx, cx
+    def multi_layer(self, target_k, mask, lhx, lcx):
+        for i in range(layer_num):
+            b_hx , b_cx = lhx[i], lcx[i]
+            if i == 0:
+                lhx[i], lcx[i] = eval("self.lstm" + str(i + 1))(target_k, (lhx[i], lcx[i]) )
+            else:
+                lhx[i], lcx[i] = eval("self.lstm" + str(i + 1))(lhx[i - 1], (lhx[i], lcx[i]) )
+            lhx[i] = torch.where(mask == 0, b_hx, lhx[i])
+            lcx[i] = torch.where(mask == 0, b_cx, lcx[i])
+        return lhx, lcx
 
-    def forward(self, target_words, hx, cx):
+    def forward(self, target_words, lhx, lcx):
         target_k = self.embed_target(target_words)
         target_k = self.drop_target(target_k)
         mask = self.create_mask(target_words)
-        hx, cx = self.multi_layer(target_k, mask ,hx, cx)
-        return hx, cx
+        lhx, lcx = self.multi_layer(target_k, mask ,lhx, lcx)
+        return lhx, lcx
