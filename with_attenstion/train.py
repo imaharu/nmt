@@ -7,20 +7,9 @@ from torch.nn.utils.rnn import *
 import time
 from get_data import *
 import torch.optim as optim
+from define_variable import *
+from model import *
 
-train_num, hidden_size, batch_size = 20000, 256, 100
-# train_num, hidden_size, batch_size = 10, 4, 2
-
-input_vocab , input_lines, input_lines_number = {}, {}, {}
-target_vocab ,target_lines ,target_lines_number = {}, {}, {}
-translate_words = {}
-
-# paddingで0を入れるから
-get_train_data_input(train_num, input_vocab, input_lines_number, input_lines)
-ev = len(input_vocab) + 1
-
-get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words)
-jv = len(target_vocab) + 1
 
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
@@ -32,7 +21,6 @@ def train(encoder, decoder, source_lines, target_lines):
     max_num =  len(target_lines) # paddingの数
     target_lines_not_last = target_lines[:(max_num-1)]
     target_lines_next = target_lines[1:]
-    
     hs, cs = encoder.initHidden()
 
     for sentence_words in source_lines:
@@ -67,7 +55,7 @@ if __name__ == '__main__':
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
 
-    for epoch in range(10):
+    for epoch in range(15):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -89,7 +77,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 15 == 0:
             outfile = "attention-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start

@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         target_k = self.drop_target(target_k)
         hx, cx = self.lstm_target(target_k, (hx, cx) )
         return hx, cx
-    
+
     def attention(self, ht, list_hs, list_source_mask, inf):
         dot = (ht * list_hs).sum(-1, keepdim=True)
         dot = torch.where(list_source_mask == 0, inf, dot)

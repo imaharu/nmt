@@ -1,5 +1,5 @@
 def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines):
-    with open("../train_data/train20000.en",'r',encoding='utf-8') as f:
+    with open("../encoder_decoder/train.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
         i = 0
         for line in lines_en:
@@ -14,7 +14,7 @@ def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines
         input_vocab['<unk>'] = len(input_vocab) + 1
 
 def get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words):
-    with open("../train_data/train20000.ja",'r',encoding='utf-8') as f:
+    with open("../encoder_decoder/train.ja",'r',encoding='utf-8') as f:
         lines_ja = f.read().strip().split('\n')
         i = 0
         for line in lines_ja:
@@ -36,7 +36,7 @@ def get_train_data_target(train_num, target_vocab, target_lines_number, target_l
         translate_words[id + 2] = "<eos>"
 
 def get_test_data_target(test_num, test_input_lines):
-    with open("../train_data/test1000.en",'r',encoding='utf-8') as f:
+    with open("../encoder_decoder/test.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
         i = 0
         for line in lines_en:
