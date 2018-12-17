@@ -39,7 +39,7 @@ if __name__ == '__main__':
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=1.0e-4, lr=1.0e-3)
-    for epoch in range(20):
+    for epoch in range(15):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 15 == 0:
             outfile = "model-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start

@@ -38,7 +38,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("model-15.model"))
+    model.load_state_dict(torch.load("model3-15.model"))
     model.eval()
 
     result_file_ja = "result"
