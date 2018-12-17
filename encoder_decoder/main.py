@@ -9,8 +9,6 @@ from operator import itemgetter
 from define_variable import *
 from model import *
 
-def create_mask(source_sentence_words):
-    return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
 def train(encoder, decoder, source_lines, target_lines):
     loss = 0
@@ -18,15 +16,12 @@ def train(encoder, decoder, source_lines, target_lines):
     target_lines_not_last = target_lines[:(max_num-1)]
     target_lines_next = target_lines[1:]
 
-    hx, cx = encoder.initHidden()
+    lhx_layer = torch.stack([ encoder.initHx() for i in range(layer_num) ], 0)
+    lcx_layer = torch.stack([ encoder.initCx() for i in range(layer_num) ], 0)
+    exit()
 
     for sentence_words in source_lines:
-        before_hx = hx
-        before_cx = cx
-        hx, cx = encoder(sentence_words, hx, cx)
-        mask = create_mask(sentence_words)
-        hx = torch.where(mask == 0, before_hx, hx)
-        cx = torch.where(mask == 0, before_cx, cx)
+        lhx_layer, lcx_layer = encoder(sentence_words, lhx_layer, lcx_layer)
 
     for target_sentence_words , target_sentence_words_next in zip(target_lines_not_last, target_lines_next):
         hx, cx = decoder(target_sentence_words, hx, cx)
@@ -38,8 +33,8 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), weight_decay=1.0e-4, lr=1.0e-3)
-    for epoch in range(15):
+    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
+    for epoch in range(10):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -61,8 +56,8 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % 15 == 0:
-            outfile = "model-" + str(epoch + 1) + ".model"
+        if (epoch + 1) % 10 == 0:
+            outfile = "layer-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
