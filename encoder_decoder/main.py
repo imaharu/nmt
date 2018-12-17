@@ -16,9 +16,10 @@ def train(encoder, decoder, source_lines, target_lines):
     target_lines_not_last = target_lines[:(max_num-1)]
     target_lines_next = target_lines[1:]
 
-    lhx_layer = torch.stack([ encoder.initHx() for i in range(layer_num) ], 0)
-    lcx_layer = torch.stack([ encoder.initCx() for i in range(layer_num) ], 0)
-
+#    lhx_layer = torch.stack([ encoder.init() for i in range(layer_num) ], 0)
+#    lcx_layer = torch.stack([ encoder.init() for i in range(layer_num) ], 0)
+    lhx_layer = encoder.lhx_layer
+    lcx_layer = encoder.lcx_layer
     for sentence_words in source_lines:
         lhx_layer, lcx_layer = encoder(sentence_words, lhx_layer, lcx_layer)
 
