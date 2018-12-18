@@ -17,19 +17,19 @@ class Encoder(nn.Module):
         self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
         self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(layer_num)])
-        self.lhx_layer = torch.stack([ self.init() for i in range(layer_num) ], 0)
-        self.lcx_layer = torch.stack([ self.init() for i in range(layer_num) ], 0)
+#        self.lhx_layer = torch.stack([ self.init() for i in range(layer_num) ], 0)
+#        self.lcx_layer = torch.stack([ self.init() for i in range(layer_num) ], 0)
 
     def create_mask(self ,sentence_words):
         return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
     def multi_layer(self, source_k, mask, lhx, lcx):
-        for i, l in enumerate(self.lstm):
+        for i, lstm in enumerate(self.lstm):
             b_hx , b_cx = lhx[i], lcx[i]
             if i == 0:
-                lhx[i], lcx[i] = self.lstm[i](source_k, (lhx[i], lcx[i]) )
+                lhx[i], lcx[i] = lstm(source_k, (lhx[i], lcx[i]) )
             else:
-                lhx[i], lcx[i] = self.lstm[i](lhx[i - 1], (lhx[i], lcx[i]) )
+                lhx[i], lcx[i] = lstm(lhx[i - 1], (lhx[i], lcx[i]) )
             torch.where(mask == 0, b_hx, lhx[i])
             torch.where(mask == 0, b_cx, lcx[i])
         return lhx, lcx
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
         return lhx, lcx
 
     def init(self):
-        init = torch.zeros(batch_size, self.hidden_size, requires_grad=True).cuda()
+        init = torch.zeros(batch_size, self.hidden_size).cuda()
         return init
 
 class Decoder(nn.Module):
@@ -58,12 +58,12 @@ class Decoder(nn.Module):
         return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
     def multi_layer(self, target_k, mask, lhx, lcx):
-        for i, l in enumerate(self.lstm):
+        for i, lstm in enumerate(self.lstm):
             b_hx , b_cx = lhx[i], lcx[i]
             if i == 0:
-                lhx[i], lcx[i] = self.lstm[i](target_k, (lhx[i], lcx[i]) )
+                lhx[i], lcx[i] = lstm(target_k, (lhx[i], lcx[i]) )
             else:
-                lhx[i], lcx[i] = self.lstm[i](lhx[i - 1], (lhx[i], lcx[i]) )
+                lhx[i], lcx[i] = lstm(lhx[i - 1], (lhx[i], lcx[i]) )
             torch.where(mask == 0, b_hx, lhx[i])
             torch.where(mask == 0, b_cx, lcx[i])
         return lhx, lcx
