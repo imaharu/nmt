@@ -55,12 +55,12 @@ if __name__ == '__main__':
 
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, Transposed_input, Transposed_target)
-            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradclip)
+            loss.backward()
             optimizer.step()
 
         if (epoch + 1) % args.epoch == 0:
-            outfile = "trained_model/unk_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
+            outfile = "trained_model/attention_unk_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
