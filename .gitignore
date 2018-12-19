@@ -30,4 +30,4 @@ DUC
 en_data
 __pycache__/
 *.model
-train_data
+train_data/*
