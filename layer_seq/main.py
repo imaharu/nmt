@@ -31,7 +31,6 @@ def train(encoder, decoder, source_lines, target_lines):
     return loss
 
 if __name__ == '__main__':
-
     start = time.time()
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, args.embed_size , args.hidden_size).to(device)
@@ -60,8 +59,8 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradclip)
             optimizer.step()
 
-        if (epoch + 1) % 15 == 0:
-            outfile = "trained_model/layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
+        if (epoch + 1) % args.epoch == 0:
+            outfile = "trained_model/unk_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

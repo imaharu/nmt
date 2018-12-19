@@ -10,7 +10,7 @@ parser.add_argument('--gradclip', type=float, default=5.0,
 parser.add_argument('--dropout', type=float, default=0.2,
                     help='Set dropout ratio in training')
 '''train details'''
-parser.add_argument('--epoch', '-e', type=int, default=15,
+parser.add_argument('--epoch', '-e', type=int, default=10,
                     help='Number of sweeps over the dataset to train')
 
 '''train_num embed hidden batch'''

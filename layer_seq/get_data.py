@@ -1,5 +1,5 @@
 def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines):
-    with open("../train_data/train.en",'r',encoding='utf-8') as f:
+    with open("../train_data/unk.en",'r',encoding='utf-8') as f:
         lines_en = f.read().strip().split('\n')
         i = 0
         for line in lines_en:
@@ -14,7 +14,7 @@ def get_train_data_input(train_num, input_vocab, input_lines_number, input_lines
         input_vocab['<unk>'] = len(input_vocab) + 1
 
 def get_train_data_target(train_num, target_vocab, target_lines_number, target_lines, translate_words):
-    with open("../train_data/train.ja",'r',encoding='utf-8') as f:
+    with open("../train_data/unk.ja",'r',encoding='utf-8') as f:
         lines_ja = f.read().strip().split('\n')
         i = 0
         for line in lines_ja:
