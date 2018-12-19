@@ -36,7 +36,7 @@ if __name__ == '__main__':
     model = EncoderDecoder(ev, jv, args.embed_size , args.hidden_size).to(device)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), weight_decay=args.weightdecay)
-    for epoch in range(10):
+    for epoch in range(args.epoch):
         print("epoch",epoch + 1)
         indexes = torch.randperm(args.train_size)
         for i in range(0, args.train_size, args.batch_size):

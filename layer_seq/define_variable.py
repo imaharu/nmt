@@ -12,19 +12,6 @@ parser.add_argument('--dropout', type=float, default=0.2,
 '''train details'''
 parser.add_argument('--epoch', '-e', type=int, default=10,
                     help='Number of sweeps over the dataset to train')
-parser.add_argument('--gpu', '-g', type=int, default=-1,
-                    help='GPU ID (negative value indicates CPU')
-parser.add_argument('--model', '-m', type=str, default='best_model.pth',
-                    help='Model file name to serialize')
-parser.add_argument('--data_path', '-p', type=str, default='/home/nakamoto/workspace/NMT/where_seq2seq/data',
-                    help='Directory to input the train dataset')
-parser.add_argument('--train_file', '-f', type=str, default='train.txt')
-parser.add_argument('--out', '-o', type=str, default='result/seq2seq/20000/',
-                    help='Directory to output the result')
-
-parser.add_argument('--evaluate', type=int, default=-1,
-                    help='Interval to output eval loss')
-parser.add_argument('--generate', help='generate only', action='store_true')
 
 '''train_num embed hidden batch'''
 parser.add_argument('--train_size','-t', type=int, default=20000,
