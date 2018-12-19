@@ -1,0 +1,15 @@
+mt*
+__pycache__/get_data.cpython-36.pyc
+*.model
+__pycache__
+test.en
+test.ja
+train.en
+train.ja
+text
+result
+layer
+3layer
+.nf*
+trained_modeli/*
+files_evaled/*
