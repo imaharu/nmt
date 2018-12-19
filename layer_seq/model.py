@@ -5,18 +5,18 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import *
 
 class EncoderDecoder(nn.Module):
-    def __init__(self, source_size, output_size, hidden_size):
+    def __init__(self, source_size, output_size, embde_size, hidden_size):
         super(EncoderDecoder, self).__init__()
-        self.encoder = Encoder(source_size, hidden_size)
-        self.decoder = Decoder(output_size, hidden_size)
+        self.encoder = Encoder(source_size, embde_size, hidden_size)
+        self.decoder = Decoder(output_size, embde_size, hidden_size)
 
 class Encoder(nn.Module):
-    def __init__(self, source_size, hidden_size):
+    def __init__(self, source_size, embde_size, hidden_size):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_size
-        self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
+        self.embed_source = nn.Embedding(source_size, embde_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
-        self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(layer_num)])
+        self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(args.layer_num)])
 
     def create_mask(self ,sentence_words):
         return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
@@ -40,20 +40,19 @@ class Encoder(nn.Module):
         return lhx, lcx
 
     def init(self):
-        init = torch.zeros(batch_size, self.hidden_size).cuda()
+        init = torch.zeros(args.batch_size, self.hidden_size).cuda()
         return init
 
 class Decoder(nn.Module):
-    def __init__(self, output_size, hidden_size):
+    def __init__(self, output_size, embed_size, hidden_size):
         super(Decoder, self).__init__()
-        self.output_size = output_size
-        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
+        self.embed_target = nn.Embedding(output_size, embed_size, padding_idx=0)
         self.drop_target = nn.Dropout(p=0.2)
-        self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(layer_num)])
+        self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(args.layer_num)])
         self.linear = nn.Linear(hidden_size, output_size)
 
     def create_mask(self ,sentence_words):
-        return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
+        return torch.cat( [ sentence_words.unsqueeze(-1) ] * args.hidden_size, 1)
 
     def multi_layer(self, target_k, mask, lhx, lcx):
         for i, lstm in enumerate(self.lstm):
