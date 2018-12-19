@@ -15,11 +15,11 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_size
         self.embed_source = nn.Embedding(source_size, embde_size, padding_idx=0)
-        self.drop_source = nn.Dropout(p=0.2)
+        self.drop_source = nn.Dropout(p=args.dropout)
         self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(args.layer_num)])
 
     def create_mask(self ,sentence_words):
-        return torch.cat( [ sentence_words.unsqueeze(-1) ] * hidden_size, 1)
+        return torch.cat( [ sentence_words.unsqueeze(-1) ] * args.hidden_size, 1)
 
     def multi_layer(self, source_k, mask, lhx, lcx):
         for i, lstm in enumerate(self.lstm):
@@ -47,7 +47,7 @@ class Decoder(nn.Module):
     def __init__(self, output_size, embed_size, hidden_size):
         super(Decoder, self).__init__()
         self.embed_target = nn.Embedding(output_size, embed_size, padding_idx=0)
-        self.drop_target = nn.Dropout(p=0.2)
+        self.drop_target = nn.Dropout(p=args.dropout)
         self.lstm = nn.ModuleList([ nn.LSTMCell(hidden_size, hidden_size) for i in range(args.layer_num)])
         self.linear = nn.Linear(hidden_size, output_size)
 
@@ -61,8 +61,8 @@ class Decoder(nn.Module):
                 lhx[i], lcx[i] = lstm(target_k, (lhx[i], lcx[i]) )
             else:
                 lhx[i], lcx[i] = lstm(lhx[i - 1], (lhx[i], lcx[i]) )
-            torch.where(mask == 0, b_hx, lhx[i])
-            torch.where(mask == 0, b_cx, lcx[i])
+        #    torch.where(mask == 0, b_hx, lhx[i])
+        #    torch.where(mask == 0, b_cx, lcx[i])
         return lhx, lcx
 
     def forward(self, target_words, lhx, lcx):
