@@ -61,8 +61,8 @@ class Decoder(nn.Module):
                 lhx[i], lcx[i] = lstm(target_k, (lhx[i], lcx[i]) )
             else:
                 lhx[i], lcx[i] = lstm(lhx[i - 1], (lhx[i], lcx[i]) )
-        #    torch.where(mask == 0, b_hx, lhx[i])
-        #    torch.where(mask == 0, b_cx, lcx[i])
+            torch.where(mask == 0, b_hx, lhx[i])
+            torch.where(mask == 0, b_cx, lcx[i])
         return lhx, lcx
 
     def forward(self, target_words, lhx, lcx):

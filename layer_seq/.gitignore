@@ -11,3 +11,5 @@ result
 layer
 3layer
 .nf*
+trained_modeli/*
+files_evaled/*

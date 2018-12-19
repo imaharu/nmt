@@ -14,7 +14,7 @@ def output(encoder, decoder, output_input_line):
     loop = 0
     lhx_layer = []
     lcx_layer = []
-    for i in range(layer_num):
+    for i in range(args.layer_num):
         lhx_layer.append(encoder.init())
         lcx_layer.append(encoder.init())
     torch.stack(lhx_layer, 0)
@@ -33,21 +33,21 @@ def output(encoder, decoder, output_input_line):
             break
         lhx_layer, lcx_layer = decoder(word_id, lhx_layer, lcx_layer)
 
-        word_id = torch.tensor([ torch.argmax(decoder.linear(lhx_layer[layer_num - 1]), dim=1) ]).cuda()
+        word_id = torch.tensor([ torch.argmax(decoder.linear(lhx_layer[args.layer_num - 1]), dim=1) ]).cuda()
         loop += 1
         if int(word_id) != target_vocab['<eos>'] and int(word_id) != 0:
-            print(translate_words[int(word_id)])
             result.append(translate_words[int(word_id)])
     return result
 
 if __name__ == '__main__':
     device = torch.device('cuda:0')
 
-    model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("layer-10.model"))
+    model = EncoderDecoder(ev, jv, args.embed_size ,args.hidden_size).to(device)
+    model.load_state_dict(torch.load("trained_model/" + args.model_path))
     model.eval()
 
-    result_file_ja = "layer.txt"
+    print(model)
+    result_file_ja = "files_evaled/" + args.result_path + ".txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):

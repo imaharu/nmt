@@ -10,7 +10,7 @@ parser.add_argument('--gradclip', type=float, default=5.0,
 parser.add_argument('--dropout', type=float, default=0.2,
                     help='Set dropout ratio in training')
 '''train details'''
-parser.add_argument('--epoch', '-e', type=int, default=10,
+parser.add_argument('--epoch', '-e', type=int, default=15,
                     help='Number of sweeps over the dataset to train')
 
 '''train_num embed hidden batch'''
@@ -25,6 +25,10 @@ parser.add_argument('--batch_size', '-b', type=int, default=50,
 parser.add_argument('--layer_num', '-l', type=int, default=2,
                     help='Layer num')
 parser.add_argument('--train_or_generate', '--tg', type=int, default=0, help='train is 0 : generete is 1')
+parser.add_argument('--test_size','--ts', type=int, default=1000, help='test_size')
+
+parser.add_argument('--result_path', '-p', type=str, default='$HOME/')
+parser.add_argument('--model_path', '-m', type=str, default='$HOME/')
 parser.set_defaults(generate=False)
 args = parser.parse_args()
 
@@ -41,4 +45,4 @@ get_train_data_target(args.train_size, target_vocab, target_lines_number, target
 jv = len(target_vocab) + 1
 
 if args.train_or_generate == 1:
-    get_test_data_target(test_num, output_input_lines)
+    get_test_data_target(args.test_size, output_input_lines)
