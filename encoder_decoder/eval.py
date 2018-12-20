@@ -7,7 +7,7 @@ import time
 import torch.optim as optim
 from operator import itemgetter
 from define_variable import *
-from emodel import *
+from model import *
 
 def output(encoder, decoder, output_input_line):
     result = []
@@ -38,10 +38,10 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("model-10.model"))
+    model.load_state_dict(torch.load("encoder-decoder-20.model"))
     model.eval()
 
-    result_file_ja = "result"
+    result_file_ja = "encoder_decoder20.txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):

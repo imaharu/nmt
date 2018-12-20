@@ -48,7 +48,7 @@ def output(encoder, decoder, output_input_line):
 if __name__ == '__main__':
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("attention-15.model"))
+    model.load_state_dict(torch.load("attention-10.model"))
     model.eval()
 
     result_file = open("result", 'w', encoding="utf-8")
