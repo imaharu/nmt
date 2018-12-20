@@ -59,7 +59,7 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradclip)
             optimizer.step()
 
-        if (epoch + 1) % args.epoch == 0:
+        if (epoch + 1) % ( args.epoch / 2 ) == 0:
             outfile = "trained_model/layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
