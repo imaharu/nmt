@@ -59,8 +59,8 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-        if (epoch + 1) % args.epoch == 0:
-            outfile = "trained_model/attention_unk_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
+        if (epoch + 1) % (args.epoch / 2) == 0:
+            outfile = "trained_model/attention_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
