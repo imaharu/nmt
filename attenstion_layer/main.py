@@ -55,20 +55,17 @@ if __name__ == '__main__':
             batch_input_lines = [ input_lines_number[int(index)] for index in indexes[i:i+args.batch_size]]
 
             max_input_num =  max([*map(lambda x: len(x), batch_input_lines)])
-            batch_input_paddings= padding(batch_input_lines, max_input_num)
-#            batch_input_paddings = Padding(batch_input_lines)
-#
+#            batch_input_paddings= padding(batch_input_lines, max_input_num)
+            batch_input_paddings = Padding(batch_input_lines)
+
             Transposed_input = batch_input_paddings.t().cuda()
 
             batch_target_lines = [ target_lines_number[int(index)] for index in indexes[i:i+args.batch_size]]
             batch_target_lines = [ [target_vocab["<bos>"]] + s + [target_vocab["<eos>"]] for s in batch_target_lines]
 
-            max_target_num =  max([*map(lambda x: len(x), batch_target_lines)])
-            #batch_target_paddings = Padding(batch_target_lines)
-            print(max_target_num)
-            print(batch_target_lines)
-            batch_target_paddings= padding(batch_target_lines, max_target_num)
-            print(batch_target_paddings)
+            #max_target_num =  max([*map(lambda x: len(x), batch_target_lines)])
+            batch_target_paddings = Padding(batch_target_lines)
+            #batch_target_paddings= padding(batch_target_lines, max_target_num)
             Transposed_target = batch_target_paddings.t().cuda()
 
             optimizer.zero_grad()
@@ -76,7 +73,6 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradclip)
             loss.backward()
             optimizer.step()
-            print(batch_input_lines)
         if (epoch + 1) % (args.epoch / 2) == 0 and epoch >= 5:
             outfile = "trained_model/atten_unk_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
