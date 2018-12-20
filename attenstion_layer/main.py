@@ -76,7 +76,7 @@ if __name__ == '__main__':
             optimizer.step()
 
         if (epoch + 1) % (args.epoch / 2) == 0 and epoch >= 5:
-            outfile = "trained_model/au_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
+            outfile = "trained_model/a_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

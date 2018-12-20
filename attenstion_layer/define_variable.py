@@ -29,6 +29,7 @@ parser.add_argument('--test_size','--ts', type=int, default=1000, help='test_siz
 
 parser.add_argument('--result_path', '-p', type=str, default='$HOME/')
 parser.add_argument('--model_path', '-m', type=str, default='$HOME/')
+parser.add_argument('--unk', type=int, default=0)
 parser.set_defaults(generate=False)
 args = parser.parse_args()
 
@@ -37,11 +38,18 @@ target_vocab ,target_lines ,target_lines_number = {}, {}, {}
 output_input_lines = {}
 translate_words = {}
 
+if args.unk:
+    train_en_path = "../train_data/unk.en"
+    train_ja_path = "../train_data/unk.ja"
+else:
+    train_en_path = "../train_data/train.en"
+    train_ja_path = "../train_data/train.ja"
+
 # paddingで0を入れるから
-get_train_data_input(args.train_size, input_vocab, input_lines_number, input_lines)
+get_train_data_input(train_en_path, args.train_size, input_vocab, input_lines_number, input_lines)
 ev = len(input_vocab) + 1
 
-get_train_data_target(args.train_size, target_vocab, target_lines_number, target_lines, translate_words)
+get_train_data_target(train_ja_path, args.train_size, target_vocab, target_lines_number, target_lines, translate_words)
 jv = len(target_vocab) + 1
 
 if args.train_or_generate == 1:
