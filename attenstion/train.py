@@ -53,9 +53,9 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
+    optimizer = torch.optim.Adam( model.parameters(), weight_decay=1.0e-6)
 
-    for epoch in range(15):
+    for epoch in range(20):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -75,9 +75,10 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, Transposed_input, Transposed_target)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
             optimizer.step()
 
-        if (epoch + 1) % 15 == 0:
+        if (epoch + 1) % 10 == 0:
             outfile = "attention-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start

@@ -9,6 +9,8 @@ from operator import itemgetter
 from define_variable import *
 from model import *
 
+def create_mask(words):
+    return torch.cat( [ words.unsqueeze(-1) ] * hidden_size, 1)
 
 def train(encoder, decoder, source_lines, target_lines):
     loss = 0
@@ -16,19 +18,18 @@ def train(encoder, decoder, source_lines, target_lines):
     target_before = target_lines[:(max_num-1)]
     target_next = target_lines[1:]
 
-    lhx_layer = []
-    lcx_layer = []
-    for i in range(layer_num):
-        lhx_layer.append(encoder.init())
-        lcx_layer.append(encoder.init())
-    torch.stack(lhx_layer, 0)
-    torch.stack(lcx_layer, 0)
-    for sentence_words in source_lines:
-        lhx_layer, lcx_layer = encoder(sentence_words, lhx_layer, lcx_layer)
+    hx, cx = encoder.initHidden()
+
+    for words in source_lines:
+        before_hx , before_cx = hx , cx
+        hx , cx = encoder(words, hx, cx)
+        mask = create_mask(words)
+        hx = torch.where(mask == 0, before_hx, hx)
+        cx = torch.where(mask == 0, before_cx, cx)
 
     for target_b , target_n in zip(target_before, target_next):
-        lhx_layer, lcx_layer = decoder(target_b, lhx_layer, lcx_layer)
-        loss += F.cross_entropy(decoder.linear(lhx_layer[layer_num - 1]), target_n, ignore_index=0)
+        hx, cx = decoder(target_b, hx, cx)
+        loss += F.cross_entropy(decoder.linear(hx), target_n, ignore_index=0)
     return loss
 
 if __name__ == '__main__':
@@ -36,8 +37,8 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), weight_decay=0.002)
-    for epoch in range(10):
+    optimizer = torch.optim.Adam( model.parameters(), weight_decay=1.0e-6)
+    for epoch in range(20):
         print("epoch",epoch + 1)
         indexes = torch.randperm(train_num)
         for i in range(0, train_num, batch_size):
@@ -57,10 +58,11 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss = train(model.encoder, model.decoder, Transposed_input, Transposed_target)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
             optimizer.step()
 
         if (epoch + 1) % 10 == 0:
-            outfile = "layer-" + str(epoch + 1) + ".model"
+            outfile = "encoder-decoder-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

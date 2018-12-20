@@ -1,5 +1,5 @@
 from get_data import *
-train_num, hidden_size, batch_size = 20000, 256, 200
+train_num, hidden_size, batch_size = 20000, 256, 50
 #train_num, hidden_size, batch_size = 4, 4, 2
 #train_num, hidden_size, batch_size = 20000, 256, 1
 
