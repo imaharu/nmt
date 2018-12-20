@@ -45,6 +45,14 @@ def get_test_data_target(test_num, test_input_lines):
             test_input_lines[i] = line
             i += 1
 
+def padding(lines, max_num):
+    for j in range(len(lines)):
+        sl = len(lines[j])
+        if sl < max_num:
+            padding_word = [0] * (max_num - sl)
+            lines[j].extend(padding_word)
+    return lines 
+
 # Only Pytorch
 import torch.nn.functional as F
 from torch import tensor as tt

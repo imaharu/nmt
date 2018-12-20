@@ -46,7 +46,6 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load("trained_model/" + args.model_path))
     model.eval()
 
-    print(model)
     result_file_ja = "files_evaled/" + args.result_path + ".txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
