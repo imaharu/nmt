@@ -42,8 +42,10 @@ if args.unk:
     train_en_path = "../train_data/unk.en"
     train_ja_path = "../train_data/unk.ja"
 else:
-    train_en_path = "../train_data/train.en"
-    train_ja_path = "../train_data/train.ja"
+#    train_en_path = "../train_data/train.en"
+#    train_ja_path = "../train_data/train.ja"
+    train_en_path = "../train_data/100000.train.en"
+    train_ja_path = "../train_data/100000.train.ja"
 
 # paddingで0を入れるから
 get_train_data_input(train_en_path, args.train_size, input_vocab, input_lines_number, input_lines)

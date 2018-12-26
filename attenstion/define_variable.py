@@ -1,7 +1,7 @@
 from get_data import *
-train_num, hidden_size, batch_size = 20000, 256, 50
+train_num, hidden_size, batch_size = 100000, 256, 50
 #train_num, hidden_size, batch_size = 100, 4, 2
-train_num, hidden_size, batch_size = 20000, 256, 1
+#train_num, hidden_size, batch_size = 100000, 256, 1
 
 
 input_vocab , input_lines, input_lines_number = {}, {}, {}

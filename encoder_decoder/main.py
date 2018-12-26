@@ -62,7 +62,7 @@ if __name__ == '__main__':
             optimizer.step()
 
         if (epoch + 1) % 10 == 0:
-            outfile = "encoder-decoder-" + str(epoch + 1) + ".model"
+            outfile = "encoder-decoder-100000-" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

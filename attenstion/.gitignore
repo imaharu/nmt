@@ -7,4 +7,4 @@ train.en
 train.ja
 main.py
 result.py
-result
+result*

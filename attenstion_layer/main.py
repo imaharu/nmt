@@ -22,8 +22,6 @@ def train(encoder, decoder, source_lines, target_lines):
     for i in range(args.layer_num):
         lhx_layer.append(encoder.init())
         lcx_layer.append(encoder.init())
-    torch.stack(lhx_layer, 0)
-    torch.stack(lcx_layer, 0)
     for sentence_words in source_lines:
         lhx_layer, lcx_layer = encoder(sentence_words, lhx_layer, lcx_layer)
 
@@ -75,8 +73,8 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradclip)
             optimizer.step()
 
-        if (epoch + 1) % (args.epoch / 2) == 0 and epoch >= 5:
-            outfile = "trained_model/a_layer-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
+        if (epoch + 1) % args.epoch == 0 and epoch >= 5:
+            outfile = "trained_model/100000-" + str(args.layer_num) + "-epoch" + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), outfile)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

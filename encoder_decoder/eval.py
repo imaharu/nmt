@@ -38,10 +38,10 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
 
     model = EncoderDecoder(ev, jv, hidden_size).to(device)
-    model.load_state_dict(torch.load("encoder-decoder-20.model"))
+    model.load_state_dict(torch.load("encoder-decoder-100000.model"))
     model.eval()
 
-    result_file_ja = "encoder_decoder20.txt"
+    result_file_ja = "encoder_decoder_100000.txt"
     result_file = open(result_file_ja, 'w', encoding="utf-8")
 
     for i in range(len(output_input_lines)):

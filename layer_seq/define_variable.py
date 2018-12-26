@@ -10,7 +10,7 @@ parser.add_argument('--gradclip', type=float, default=5.0,
 parser.add_argument('--dropout', type=float, default=0.2,
                     help='Set dropout ratio in training')
 '''train details'''
-parser.add_argument('--epoch', '-e', type=int, default=10,
+parser.add_argument('--epoch', '-e', type=int, default=20,
                     help='Number of sweeps over the dataset to train')
 
 '''train_num embed hidden batch'''
@@ -22,7 +22,7 @@ parser.add_argument('--hidden_size', type=int, default=256,
                     help='number of hidden units')
 parser.add_argument('--batch_size', '-b', type=int, default=50,
                     help='Number of batchsize')
-parser.add_argument('--layer_num', '-l', type=int, default=2,
+parser.add_argument('--layer_num', '-l', type=int, default=1,
                     help='Layer num')
 parser.add_argument('--train_or_generate', '--tg', type=int, default=0, help='train is 0 : generete is 1')
 parser.add_argument('--test_size','--ts', type=int, default=1000, help='test_size')
@@ -42,8 +42,10 @@ if args.unk:
     train_en_path = "../train_data/unk.en"
     train_ja_path = "../train_data/unk.ja"
 else:
-    train_en_path = "../train_data/train.en"
-    train_ja_path = "../train_data/train.ja"
+    #train_en_path = "../train_data/train.en"
+    #train_ja_path = "../train_data/train.ja"
+    train_en_path = "../train_data/100000.train.en"
+    train_ja_path = "../train_data/100000.train.ja"
 
 # paddingで0を入れるから
 get_train_data_input(train_en_path, args.train_size, input_vocab, input_lines_number, input_lines)
