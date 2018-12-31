@@ -2,9 +2,6 @@ mt*
 __pycache__/get_data.cpython-36.pyc
 *.model
 __pycache__
-test.en
-train.en
-train.ja
-main.py
-result.py
-result*
+source_vocab
+target_vocab
+data/*
