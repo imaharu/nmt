@@ -33,9 +33,9 @@ class MyDataset(Dataset):
         return [source_padding, target_padding]
 
 class Word_Data():
-    def __init__(self):
-        self.source_file = "source_vocab"
-        self.target_file = "target_vocab"
+    def __init__(self, source_file, target_file):
+        self.source_file = source_file
+        self.target_file = target_file
         self.source_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
         self.target_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
 

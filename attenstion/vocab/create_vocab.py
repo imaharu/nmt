@@ -1,5 +1,7 @@
-source_path = "../train_data/100000.train.en"
-target_path = "../train_data/100000.train.ja"
+#source_path = "../train_data/100000.train.en"
+#target_path = "../train_data/100000.train.ja"
+source_path = "../../train_data/train.en"
+target_path = "../../train_data/train.ja"
 
 def GetVocab(file_name):
     vocab = {}
@@ -14,10 +16,10 @@ def GetVocab(file_name):
 source_vocab = GetVocab(source_path)
 target_vocab = GetVocab(target_path)
 
-with open("source_vocab", "w") as f:
+with open("source_20000vocab", "w") as f:
     for key in source_vocab.keys():
         f.write(key + "\n")
 
-with open("target_vocab", "w") as f:
+with open("target_20000vocab", "w") as f:
     for key in target_vocab.keys():
         f.write(key + "\n")

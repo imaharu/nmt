@@ -54,7 +54,7 @@ args = parser.parse_args()
 
 ##### end #####
 
-word_data = Word_Data()
+word_data = Word_Data("vocab/source_vocab", "vocab/target_vocab")
 
 if args.create_data:
     source_save_path = "data/source.pt"
