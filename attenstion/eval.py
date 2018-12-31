@@ -8,7 +8,6 @@ from get_data import *
 from model import *
 from define_variable import *
 
-
 def output(encoder, decoder, output_input_line):
     result = []
     loop = 0

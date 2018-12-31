@@ -5,3 +5,4 @@ __pycache__
 source_vocab
 target_vocab
 data/*
+vocab/*vocab
