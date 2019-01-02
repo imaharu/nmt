@@ -11,33 +11,40 @@ PADDING = 0
 UNK = 1
 START_DECODING = 2
 STOP_DECODING = 3
+import copy
+class Preprocess():
+    def __init__(self):
+        self.init_dict = {"[PAD]": PADDING ,"[UNK]": UNK, "[START]": START_DECODING, "[STOP]": STOP_DECODING}
 
-class MyData():
-    def __init__(self, data_path, file_name):
-        self.data_path = data_path
-        self.file_name = file_name
-        self.dict = {"[PAD]": PADDING ,"[UNK]": UNK, "[START]": START_DECODING, "[STOP]": STOP_DECODING}
+    def getVocab(self, vocab_file):
+        return self.pushVocab(vocab_file)
 
-    def pushVocab(self, file_name):
-        with open(file_name) as f:
+    def pushVocab(self, vocab_file):
+        vocab_dict = copy.copy(self.init_dict)
+        with open(vocab_file) as f:
             for count, vocab in enumerate(f):
-                self.dict[vocab.strip()] = len(self.dict) + 1
+                vocab_dict[vocab.strip()] = len(vocab_dict)
+                if len(vocab_dict) >= 50000:
+                    break
+        return vocab_dict
 
-    def LoadTensorData(self, vocab_file):
-        tensor_data = self.GetTensorData(self.dict, self.data_path, self.flag)
+    def load(self, data_path, mode, vocab_dict):
+        '''
+            mode : 0 -> train_source / eval / decode
+            mode : 1 -> train_target
+
+        '''
+        self.dict = vocab_dict
+        with open(data_path) as f:
+            tensor_data = [ self.ConvertTensor(doc, mode) for i, doc in enumerate(f)]
         return tensor_data
 
-    def GetTensorData(self, langauge_dict, file_path, source_flag):
-        with open(file_path) as f:
-            tensor_data = [ self.ConvertTensor(langauge_dict, doc, source_flag) for i, doc in enumerate(f)]
-        return tensor_data
-
-    def ConvertTensor(self, langauge_dict, doc, source_flag):
+    def ConvertTensor(self, doc, mode):
         doc = self.replaceWord(doc)
         words = self.DocToWord(doc)
-        if source_flag:
+        if mode == 1:
             words = ["[BOS]"] + words + ["[EOS]"]
-        words_id = self.SentenceToDictID(langauge_dict, words)
+        words_id = self.SentenceToDictID(words)
         return words_id
 
     def replaceWord(self, doc):
@@ -48,11 +55,11 @@ class MyData():
     def DocToWord(self, strs):
         return strs.strip().split(' ')
 
-    def SentenceToDictID(self, langauge_dict, sentence):
+    def SentenceToDictID(self, sentence):
         slist = []
         for word in sentence:
-            if word in langauge_dict:
-                slist.append(langauge_dict[word])
+            if word in self.dict:
+                slist.append(self.dict[word])
             else:
                 slist.append(UNK)
         return torch.tensor(slist)

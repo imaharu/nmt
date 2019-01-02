@@ -9,6 +9,8 @@ import torch.optim as optim
 from define_variable import *
 from model import *
 from tqdm import tqdm
+from dataset import *
+from get_score import *
 
 def train(model, source, target):
     loss = torch.mean(model(source, target), 0)
@@ -25,13 +27,21 @@ if __name__ == '__main__':
     device = torch.device('cuda:0')
     print("Let's use", torch.cuda.device_count(), "GPUs!")
 
-    data_set = MyDataset(source_data, target_data)
+    data_set = MyDataset(train_source, train_target)
     train_iter = DataLoader(data_set, batch_size=batch_size, collate_fn=data_set.collater, shuffle=True)
+
+    val_set = EvaluateDataset(val_source)
+    val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
 
     model = EncoderDecoder(source_size, target_size, hidden_size)
     model.train()
     model = nn.DataParallel(model).to(device)
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
+
+    max_score = 0
+    score = 0
+
+    save_model_dir = "{}/{}/".format("trained_model", args.save_path)
 
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
@@ -44,11 +54,16 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss = train(model, iters[0], iters[1])
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-        if (epoch + 1) % 5 == 0:
-            outfile = "trained_model/" + str(save_path) + "/" + str(epoch + 1) + ".model"
-            torch.save(model.state_dict(), outfile)
+        score = GetBlueScore(model, val_iter, gold_sentence_file)
+        print("mac_score: {}".format(max_score))
+        print("score: {}".format(score))
+
+        if max_score < score:
+            max_score = score
+            save_model_filename = save_model_dir + str(epoch + 1) + ".model"
+            torch.save(model.state_dict(), save_model_filename)
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

@@ -33,7 +33,7 @@ parser.add_argument('--batch_size', '-b', type=int, default=50,
 
 parser.add_argument('--result_path', '-r' ,type=str)
 parser.add_argument('--model_path', '-m' , type=str)
-parser.add_argument('--save_path', '-s' , type=str)
+parser.add_argument('--save_path', '-s' , type=str, default="train")
 
 parser.add_argument('--is_short_data', '-d' , type=int, default=1,
                     help='short: vocab20000, long: vocab100000')
@@ -44,26 +44,37 @@ args = parser.parse_args()
 if args.is_short_data:
     train_en = "../train_data/train.en"
     train_ja = "../train_data/train.ja"
-    source_vocab = "vocab/source20000_vocab"
-    target_vocab = "vocab/target20000_vocab"
+    source_vocab = "vocab/source_20000vocab"
+    target_vocab = "vocab/target_20000vocab"
 else:
     train_en = "../train_data/100000train.en"
     train_ja = "../train_data/100000train.ja"
     source_vocab = "vocab/source_vocab"
     target_vocab = "vocab/target_vocab"
 
-word_data = Word_Data(train_en, train_ja, source_vocab, target_vocab)
+val_en = "../train_data/val.en"
+val_ja = "../train_data/val.ja"
 
-exit()
+pre_data = Preprocess()
+source_dict = pre_data.getVocab(source_vocab)
+train_source = pre_data.load(train_en , 0, source_dict)
+target_dict = pre_data.getVocab(target_vocab)
+train_target = pre_data.load(train_ja , 1, target_dict)
+
+source_size = len(source_dict)
+target_size = len(target_dict)
+
+val_source = pre_data.load(val_en, 0, source_dict)
 
 if args.mode == 0:
     train_doc_num = 6
+    train_source = train_source[:6]
+    train_target = train_target[:6]
+    val_source = val_source[:3]
     hidden_size = 4
     embed_size = 4
     batch_size = 2
     epoch = 2
-    source_data = torch.load(args.load_source_file)
-    target_data = torch.load(args.load_target_file)
 
 elif args.mode == 1:
     train_doc_num = args.train_num
@@ -71,13 +82,6 @@ elif args.mode == 1:
     embed_size = args.embed_size
     batch_size = args.batch_size
     epoch = args.epoch
-    source_data = torch.load(args.load_source_file)
-    target_data = torch.load(args.load_target_file)
 else:
     batch_size = 1
     hidden_size = args.hidden_size
-
-source_size = word_data.getVocabSize(1)
-target_size = word_data.getVocabSize(0)
-
-
