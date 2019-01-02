@@ -9,79 +9,23 @@ from torch.nn.utils.rnn import pad_sequence
 
 PADDING = 0
 UNK = 1
-BOS = 2
-EOS = 3
+START_DECODING = 2
+STOP_DECODING = 3
 
-class MyDataset(Dataset):
-    def __init__(self, source, target):
-        self.source = source
-        self.target = target
+class MyData():
+    def __init__(self, data_path, file_name):
+        self.data_path = data_path
+        self.file_name = file_name
+        self.dict = {"[PAD]": PADDING ,"[UNK]": UNK, "[START]": START_DECODING, "[STOP]": STOP_DECODING}
 
-    def __getitem__(self, index):
-        get_source = self.source[index]
-        get_target = self.target[index]
-        return [get_source, get_target]
-
-    def __len__(self):
-        return len(self.source)
-
-    def collater(self, items):
-        source_items = [item[0] for item in items]
-        target_items = [item[1] for item in items]
-        source_padding = pad_sequence(source_items, batch_first=True)
-        target_padding = pad_sequence(target_items, batch_first=True)
-        return [source_padding, target_padding]
-
-class EvalDataset(Dataset):
-    def __init__(self, source):
-        self.source = source
-
-    def __getitem__(self, index):
-        get_source = self.source[index]
-        return [get_source]
-
-    def __len__(self):
-        return len(self.source)
-
-    def collater(self, items):
-        source_items = [item[0] for item in items]
-        source_padding = pad_sequence(source_items, batch_first=True)
-        return [source_padding]
-
-
-class Word_Data():
-    def __init__(self, source_path, target_path, source_file, target_file):
-        self.source_file = source_file
-        self.target_file = target_file
-        self.source_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
-        self.target_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
-
-        self.source_path = source_path
-        self.target_path = target_path
-
-    def getVocabSize(self, flag):
-        # flag -> 1 source | flag -> 0 target
-        if flag:
-            self.pushVocab(self.source_dict ,self.source_file)
-            return len(self.source_dict) + 1
-        else:
-            self.pushVocab(self.target_dict ,self.target_file)
-            return len(self.target_dict) + 1
-
-    def save(self, source_file , target_file):
-        self.pushVocab(self.source_dict, self.source_file)
-        self.pushVocab(self.target_dict, self.target_file)
-        self.SaveTensorData(self.source_dict, self.source_path, source_file, 1)
-        self.SaveTensorData(self.target_dict, self.target_path, target_file, 0)
-
-    def pushVocab(self, langauge_dict, file_name):
+    def pushVocab(self, file_name):
         with open(file_name) as f:
             for count, vocab in enumerate(f):
-                langauge_dict[vocab.strip()] = len(langauge_dict) + 1
+                self.dict[vocab.strip()] = len(self.dict) + 1
 
-    def SaveTensorData(self, langauge_dict, path, file_name, source_flag):
-        tensor_data = self.GetTensorData(langauge_dict, path, source_flag)
-        torch.save(tensor_data, file_name)
+    def LoadTensorData(self, vocab_file):
+        tensor_data = self.GetTensorData(self.dict, self.data_path, self.flag)
+        return tensor_data
 
     def GetTensorData(self, langauge_dict, file_path, source_flag):
         with open(file_path) as f:
