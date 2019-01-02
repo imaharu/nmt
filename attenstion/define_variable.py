@@ -67,7 +67,6 @@ target_size = len(target_dict)
 val_source = pre_data.load(val_en, 0, source_dict)
 
 if args.mode == 0:
-    train_doc_num = 6
     train_source = train_source[:6]
     train_target = train_target[:6]
     val_source = val_source[:3]
@@ -77,7 +76,6 @@ if args.mode == 0:
     epoch = 2
 
 elif args.mode == 1:
-    train_doc_num = args.train_num
     hidden_size = args.hidden_size
     embed_size = args.embed_size
     batch_size = args.batch_size

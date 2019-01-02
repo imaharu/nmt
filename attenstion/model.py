@@ -13,49 +13,72 @@ class EncoderDecoder(nn.Module):
         self.encoder = Encoder(source_size, hidden_size)
         self.decoder = Decoder(output_size, hidden_size)
 
-    def forward(self, source, target):
+    def forward(self, source=None, target=None, train=False, phase=0):
         def init(source_len):
             hx = torch.zeros(source_len, hidden_size).cuda(device=source.device)
             cx = torch.zeros(source_len, hidden_size).cuda(device=source.device)
             return hx, cx
 
-        source_len = len(source)
-        hx, cx = init(source_len)
-
-        source = source.t()
-        target = target.t()
-        loss = 0
-
         hx_list = []
         lmasks = []
-        for words in source:
-            hx , cx = self.encoder(words, hx, cx)
-            hx_list.append(hx)
-            masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
-            lmasks.append( torch.unsqueeze(masks, 0) )
+        loss = 0
+        if train:
+            source_len = len(source)
+            hx, cx = init(source_len)
+            source = source.t()
+            target = target.t()
 
-        hx_list = torch.stack(hx_list, 0)
-        lmasks = torch.cat(lmasks)
+            for words in source:
+                hx , cx = self.encoder(words, hx, cx)
+                hx_list.append(hx)
+                masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
+                lmasks.append( torch.unsqueeze(masks, 0) )
 
-        inf = torch.full((len(source), source_len), float("-inf")).cuda(device=source.device)
-        inf = torch.unsqueeze(inf, -1)
+            hx_list = torch.stack(hx_list, 0)
+            lmasks = torch.cat(lmasks)
 
-        lines_t_last = target[1:]
-        lines_f_last = target[:(len(source) - 1)]
+            inf = torch.full((len(source), source_len), float("-inf")).cuda(device=source.device)
+            inf = torch.unsqueeze(inf, -1)
 
-        for words_f, word_t in zip(lines_f_last, lines_t_last):
-            hx , dw_cx = self.decoder(words_f, hx, cx)
-            new_hx = self.decoder.attention(
-                        hx, hx_list, lmasks, inf)
-            loss += F.cross_entropy(
-               self.decoder.linear(new_hx),
-                   word_t , ignore_index=0)
+            lines_t_last = target[1:]
+            lines_f_last = target[:(len(source) - 1)]
 
-        loss = torch.tensor(loss, requires_grad=True).unsqueeze(0).cuda(device=source.device)
-        return loss
+            for words_f, word_t in zip(lines_f_last, lines_t_last):
+                hx , cx = self.decoder(words_f, hx, cx)
+                hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
+                loss += F.cross_entropy(
+                    self.decoder.linear(hx_new), word_t , ignore_index=0)
 
-    def eval(self, source, target):
-        return 1
+            loss = torch.tensor(loss, requires_grad=True).unsqueeze(0).cuda(device=source.device)
+            return loss
+
+        elif phase == 1:
+            source_len = len(source)
+            hx, cx = init(source_len)
+            source = source.t()
+            for words in source:
+                hx , cx = self.encoder(words, hx, cx)
+                hx_list.append(hx)
+                masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
+                lmasks.append( torch.unsqueeze(masks, 0) )
+
+            hx_list = torch.stack(hx_list, 0)
+            lmasks = torch.cat(lmasks)
+            inf = torch.full((len(source), source_len), float("-inf")).cuda(device=source.device)
+            inf = torch.unsqueeze(inf, -1)
+
+            loop = 0
+            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
+            result = []
+            while True:
+                if loop >= 50 or int(word_id) == target_dict['[STOP]']:
+                    break
+                hx , cx = self.decoder(word_id, hx, cx)
+                hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
+                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
+                loop += 1
+
+            return result
 
 class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):

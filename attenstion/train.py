@@ -13,11 +13,14 @@ from dataset import *
 from get_score import *
 
 def train(model, source, target):
-    loss = torch.mean(model(source, target), 0)
+    loss = torch.mean(model(source=source, target=target, train=True), 0)
     return loss
 
 if __name__ == '__main__':
-    logger.debug("訓練文書数: " +  str(train_doc_num))
+    if args.is_short_data:
+        logger.debug("訓練文書数: " +  str(20000))
+    else:
+        logger.debug("訓練文書数: " +  str(100000))
     logger.debug("hidden_size: " + str(hidden_size))
     logger.debug("embed_size: " +  str(embed_size))
     logger.debug("epoch : " + str(epoch))
@@ -34,7 +37,6 @@ if __name__ == '__main__':
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
 
     model = EncoderDecoder(source_size, target_size, hidden_size)
-    model.train()
     model = nn.DataParallel(model).to(device)
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 
@@ -43,6 +45,8 @@ if __name__ == '__main__':
 
     save_model_dir = "{}/{}/".format("trained_model", args.save_path)
 
+    calc_blue = CalcBlue(val_iter, val_ja)
+
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
         tqdm_desc = "[Epoch{:>3}]".format(epoch)
@@ -50,6 +54,7 @@ if __name__ == '__main__':
         tqdm_kwargs = {'desc': tqdm_desc, 'smoothing': 0.1, 'ncols': 100,
                     'bar_format': tqdm_bar_format, 'leave': False}
 
+        model.train()
         for iters in tqdm(train_iter, **tqdm_kwargs):
             optimizer.zero_grad()
             loss = train(model, iters[0], iters[1])
@@ -57,10 +62,10 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-        score = GetBlueScore(model, val_iter, gold_sentence_file)
+        score = calc_blue.GetBlueScore(model)
         print("mac_score: {}".format(max_score))
         print("score: {}".format(score))
-
+        exit()
         if max_score < score:
             max_score = score
             save_model_filename = save_model_dir + str(epoch + 1) + ".model"

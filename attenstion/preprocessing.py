@@ -43,7 +43,7 @@ class Preprocess():
         doc = self.replaceWord(doc)
         words = self.DocToWord(doc)
         if mode == 1:
-            words = ["[BOS]"] + words + ["[EOS]"]
+            words = ["[START]"] + words + ["[STOP]"]
         words_id = self.SentenceToDictID(words)
         return words_id
 

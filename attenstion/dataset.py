@@ -41,4 +41,4 @@ class EvaluateDataset(Dataset):
     def collater(self, items):
         source_items = [item[0] for item in items]
         source_padding = pad_sequence(source_items, batch_first=True)
-        return [source_padding]
+        return source_padding
