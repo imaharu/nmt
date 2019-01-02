@@ -32,15 +32,32 @@ class MyDataset(Dataset):
         target_padding = pad_sequence(target_items, batch_first=True)
         return [source_padding, target_padding]
 
+class EvalDataset(Dataset):
+    def __init__(self, source):
+        self.source = source
+
+    def __getitem__(self, index):
+        get_source = self.source[index]
+        return [get_source]
+
+    def __len__(self):
+        return len(self.source)
+
+    def collater(self, items):
+        source_items = [item[0] for item in items]
+        source_padding = pad_sequence(source_items, batch_first=True)
+        return [source_padding]
+
+
 class Word_Data():
-    def __init__(self, source_file, target_file):
+    def __init__(self, source_path, target_path, source_file, target_file):
         self.source_file = source_file
         self.target_file = target_file
         self.source_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
         self.target_dict = {"[UNK]": UNK, "[BOS]": BOS, "[EOS]": EOS}
 
-        self.source_path = "../train_data/100000.train.en"
-        self.target_path = "../train_data/100000.train.ja"
+        self.source_path = source_path
+        self.target_path = target_path
 
     def getVocabSize(self, flag):
         # flag -> 1 source | flag -> 0 target

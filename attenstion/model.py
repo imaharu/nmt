@@ -54,6 +54,9 @@ class EncoderDecoder(nn.Module):
         loss = torch.tensor(loss, requires_grad=True).unsqueeze(0).cuda(device=source.device)
         return loss
 
+    def eval(self, source, target):
+        return 1
+
 class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):
         super(Encoder, self).__init__()
