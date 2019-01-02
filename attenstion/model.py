@@ -8,10 +8,10 @@ def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
 class EncoderDecoder(nn.Module):
-    def __init__(self, source_size, output_size, hidden_size):
+    def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
         self.encoder = Encoder(source_size, hidden_size)
-        self.decoder = Decoder(output_size, hidden_size)
+        self.decoder = Decoder(target_size, hidden_size)
 
     def forward(self, source=None, target=None, train=False, phase=0):
         def init(source_len):
@@ -101,13 +101,13 @@ class Encoder(nn.Module):
         return hx, cx
 
 class Decoder(nn.Module):
-    def __init__(self, output_size, hidden_size):
+    def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
         self.output_size = output_size
-        self.embed_target = nn.Embedding(output_size, hidden_size, padding_idx=0)
+        self.embed_target = nn.Embedding(target_size, hidden_size, padding_idx=0)
         self.drop_target = nn.Dropout(p=0.2)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
-        self.linear = nn.Linear(hidden_size, output_size)
+        self.linear = nn.Linear(hidden_size, target_size)
         self.attention_linear = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(self, target_words, hx, cx):
