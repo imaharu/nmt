@@ -76,8 +76,8 @@ class EncoderDecoder(nn.Module):
                 hx , cx = self.decoder(word_id, hx, cx)
                 hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
+                result.append(word_id)
                 loop += 1
-
             return result
 
 class Encoder(nn.Module):
@@ -103,7 +103,6 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
-        self.output_size = output_size
         self.embed_target = nn.Embedding(target_size, hidden_size, padding_idx=0)
         self.drop_target = nn.Dropout(p=0.2)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)

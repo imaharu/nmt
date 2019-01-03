@@ -43,9 +43,9 @@ if __name__ == '__main__':
     max_score = 0
     score = 0
 
-    save_model_dir = "{}/{}/".format("trained_model", args.save_path)
+    save_model_dir = "{}/{}".format("trained_model", args.save_path)
 
-    calc_blue = CalcBlue(val_iter, val_ja)
+    calc_blue = CalcBlue(target_dict, val_iter, val_ja)
 
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
@@ -62,12 +62,14 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-        score = calc_blue.GetBlueScore(model)
-        print("mac_score: {}".format(max_score))
-        print("score: {}".format(score))
-        exit()
-        if max_score < score:
-            max_score = score
+        #score = calc_blue.GetBlueScore(model)
+        #print("mac_score: {}".format(max_score))
+        #print("score: {}".format(score))
+        #if max_score < score:
+        #    max_score = score
+        #    save_model_filename = save_model_dir + str(epoch + 1) + ".model"
+        #    torch.save(model.state_dict(), save_model_filename)
+        if (epoch + 1) == args.epoch:
             save_model_filename = save_model_dir + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), save_model_filename)
         elapsed_time = time.time() - start

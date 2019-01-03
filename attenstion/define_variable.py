@@ -83,3 +83,4 @@ elif args.mode == 1:
 else:
     batch_size = 1
     hidden_size = args.hidden_size
+    test_en = "../train_data/val.en"
