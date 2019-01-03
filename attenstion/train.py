@@ -10,7 +10,7 @@ from define_variable import *
 from model import *
 from tqdm import tqdm
 from dataset import *
-from get_score import *
+from evaluate_util import *
 
 def train(model, source, target):
     loss = torch.mean(model(source=source, target=target, train=True), 0)

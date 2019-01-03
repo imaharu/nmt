@@ -6,6 +6,8 @@ import torch.optim as optim
 from torch.nn.utils.rnn import *
 from model import *
 from define_variable import *
+from dataset import *
+from evaluate_util import *
 from collections import OrderedDict
 
 if __name__ == '__main__':
@@ -18,6 +20,14 @@ if __name__ == '__main__':
         new_state_dict[name] = v
     model.load_state_dict(new_state_dict)
     model.eval()
+    data_set = EvaluateDataset(test_source)
+    eval_iter = DataLoader(data_set, batch_size=1, collate_fn=data_set.collater)
 
-    data_set = EvaluateDataset(source_data)
-    train_iter = DataLoader(data_set, batch_size=1, collate_fn=data_set.collater)
+    Evaluate = Evaluate(target_dict)
+    pred_file = open("pred.txt", 'w', encoding="utf-8")
+    for iters in eval_iter:
+        pred = model(source=iters.cuda(), phase=1)
+        sentence = Evaluate.TranslateSentence(pred)
+        sentence = ' '.join(sentence)
+        pred_file.write(sentence + '\n')
+    pred_file.close

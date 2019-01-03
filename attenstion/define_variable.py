@@ -57,16 +57,15 @@ val_ja = "../train_data/val.ja"
 
 pre_data = Preprocess()
 source_dict = pre_data.getVocab(source_vocab)
-train_source = pre_data.load(train_en , 0, source_dict)
 target_dict = pre_data.getVocab(target_vocab)
-train_target = pre_data.load(train_ja , 1, target_dict)
 
 source_size = len(source_dict)
 target_size = len(target_dict)
 
-val_source = pre_data.load(val_en, 0, source_dict)
-
 if args.mode == 0:
+    train_source = pre_data.load(train_en , 0, source_dict)
+    train_target = pre_data.load(train_ja , 1, target_dict)
+    val_source = pre_data.load(val_en, 0, source_dict)
     train_source = train_source[:6]
     train_target = train_target[:6]
     val_source = val_source[:3]
@@ -76,11 +75,16 @@ if args.mode == 0:
     epoch = 2
 
 elif args.mode == 1:
+    train_source = pre_data.load(train_en , 0, source_dict)
+    train_target = pre_data.load(train_ja , 1, target_dict)
+    val_source = pre_data.load(val_en, 0, source_dict)
     hidden_size = args.hidden_size
     embed_size = args.embed_size
     batch_size = args.batch_size
     epoch = args.epoch
+
 else:
     batch_size = 1
     hidden_size = args.hidden_size
-    test_en = "../train_data/val.en"
+    test_en = "../train_data/eval.en"
+    test_source = pre_data.load(test_en , 0, source_dict)

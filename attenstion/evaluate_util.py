@@ -1,10 +1,11 @@
 from nltk.translate.bleu_score import sentence_bleu
-class CalcBlue:
-    def __init__(self, target_dict ,val_iter, gold_sentence_file):
+class Evaluate:
+    def __init__(self, target_dict, val=0 ,gold_sentence_file=None, val_iter=None):
         self.target_dict = target_dict
-        self.val_iter = val_iter
+        if val:
+            self.val_iter = val_iter
+            self.gold_sentence = self.GetGoldSentence(gold_sentence_file)
         self.translate_dict = self.GetTranslateDict(target_dict)
-        self.gold_sentence = self.GetGoldSentence(gold_sentence_file)
 
     def GetGoldSentence(self, gold_sentence_file):
         gold_sentence = []

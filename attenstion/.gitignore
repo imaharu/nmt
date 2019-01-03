@@ -6,3 +6,4 @@ source_vocab
 target_vocab
 data/*
 vocab/*vocab
+pred.txt

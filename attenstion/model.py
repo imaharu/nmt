@@ -68,14 +68,14 @@ class EncoderDecoder(nn.Module):
             inf = torch.unsqueeze(inf, -1)
 
             loop = 0
-            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
+            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda(device=source.device)
             result = []
             while True:
                 if loop >= 50 or int(word_id) == target_dict['[STOP]']:
                     break
                 hx , cx = self.decoder(word_id, hx, cx)
                 hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
-                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
+                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda(device=source.device)
                 result.append(word_id)
                 loop += 1
             return result
