@@ -2,7 +2,8 @@ from define_variable import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils.rnn import *
+import torch.nn.utils.rnn as rnn
+#from torch.nn.utils.rnn import *
 
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
@@ -66,9 +67,16 @@ class Encoder(nn.Module):
         self.lstm = nn.LSTM(hidden_size, hidden_size)
 
     def forward(self, sentences):
+        input_lengths = torch.tensor(
+            [seq.size(-1) for seq in sentences], device=sentences.device)
         embed = self.embed_source(sentences)
         embed = self.drop_source(embed)
-        return self.lstm(embed)
+        embed = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
+        packed_output, hx_cx = self.lstm(embed)
+        output, _ = rnn.pad_packed_sequence(
+            packed_output, batch_first=True
+        )
+        return output, hx_cx
 
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
@@ -79,9 +87,9 @@ class Decoder(nn.Module):
         self.linear = nn.Linear(hidden_size, target_size)
 
     def forward(self, target_words, hx_cx):
-        target_k = self.embed_target(target_words)
-        target_k = self.drop_target(target_k)
-        hx, cx = self.lstm_target(target_k, hx_cx )
+        embed = self.embed_target(target_words)
+        embed = self.drop_target(embed)
+        hx, cx = self.lstm_target(embed, hx_cx )
         return hx, cx
 
 class Attention(nn.Module):
