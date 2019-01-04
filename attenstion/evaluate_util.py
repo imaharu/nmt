@@ -21,7 +21,6 @@ class Evaluate:
         for index, source in enumerate(self.val_iter):
             sentence_ids = model(source=source, phase=1)
             sentence = self.TranslateSentence(sentence_ids)
-            print(sentence)
             self.gold_sentence[index]
             sum_score += sentence_bleu(sentence, self.gold_sentence[index] ,weights=(1,))
             break

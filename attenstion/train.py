@@ -37,6 +37,7 @@ if __name__ == '__main__':
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
 
     model = EncoderDecoder(source_size, target_size, hidden_size)
+    model.train()
     model = nn.DataParallel(model).to(device)
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 
@@ -45,7 +46,7 @@ if __name__ == '__main__':
 
     save_model_dir = "{}/{}".format("trained_model", args.save_path)
 
-    calc_blue = CalcBlue(target_dict, val_iter, val_ja)
+    calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
@@ -54,14 +55,14 @@ if __name__ == '__main__':
         tqdm_kwargs = {'desc': tqdm_desc, 'smoothing': 0.1, 'ncols': 100,
                     'bar_format': tqdm_bar_format, 'leave': False}
 
-        model.train()
         for iters in tqdm(train_iter, **tqdm_kwargs):
             optimizer.zero_grad()
             loss = train(model, iters[0], iters[1])
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
-
+        print(model.state_dict())
+        print("----------------------------")
         #score = calc_blue.GetBlueScore(model)
         #print("mac_score: {}".format(max_score))
         #print("score: {}".format(score))
