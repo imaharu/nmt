@@ -13,7 +13,7 @@ from dataset import *
 from evaluate_util import *
 
 def train(model, source, target):
-    loss = torch.mean(model(source=source, target=target, train=True), 0)
+    loss = model(source=source, target=target, train=True)
     return loss
 
 if __name__ == '__main__':
@@ -36,9 +36,8 @@ if __name__ == '__main__':
     val_set = EvaluateDataset(val_source)
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
 
-    model = EncoderDecoder(source_size, target_size, hidden_size)
+    model = EncoderDecoder(source_size, target_size, hidden_size).cuda(device=device)
     model.train()
-    model = nn.DataParallel(model).to(device)
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 
     max_score = 0
@@ -57,12 +56,10 @@ if __name__ == '__main__':
 
         for iters in tqdm(train_iter, **tqdm_kwargs):
             optimizer.zero_grad()
-            loss = train(model, iters[0], iters[1])
+            loss = train(model, iters[0].cuda(), iters[1].cuda())
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
-        print(model.state_dict())
-        print("----------------------------")
         #score = calc_blue.GetBlueScore(model)
         #print("mac_score: {}".format(max_score))
         #print("score: {}".format(score))

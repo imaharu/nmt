@@ -15,8 +15,8 @@ class EncoderDecoder(nn.Module):
 
     def forward(self, source=None, target=None, train=False, phase=0):
         def init(source_len):
-            hx = torch.zeros(source_len, hidden_size).cuda(device=source.device)
-            cx = torch.zeros(source_len, hidden_size).cuda(device=source.device)
+            hx = torch.zeros(source_len, hidden_size).cuda()
+            cx = torch.zeros(source_len, hidden_size).cuda()
             return hx, cx
 
         hx_list = []
@@ -37,7 +37,7 @@ class EncoderDecoder(nn.Module):
             hx_list = torch.stack(hx_list, 0)
             lmasks = torch.cat(lmasks)
 
-            inf = torch.full((len(source), source_len), float("-inf")).cuda(device=source.device)
+            inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
 
             lines_t_last = target[1:]
@@ -49,7 +49,6 @@ class EncoderDecoder(nn.Module):
                 loss += F.cross_entropy(
                     self.decoder.linear(hx_new), word_t , ignore_index=0)
 
-            loss = torch.tensor(loss, requires_grad=True).unsqueeze(0).cuda(device=source.device)
             return loss
 
         elif phase == 1:
@@ -64,18 +63,18 @@ class EncoderDecoder(nn.Module):
 
             hx_list = torch.stack(hx_list, 0)
             lmasks = torch.cat(lmasks)
-            inf = torch.full((len(source), source_len), float("-inf")).cuda(device=source.device)
+            inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
 
             loop = 0
-            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda(device=source.device)
+            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             while True:
                 if loop >= 50 or int(word_id) == target_dict['[STOP]']:
                     break
                 hx , cx = self.decoder(word_id, hx, cx)
                 hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
-                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda(device=source.device)
+                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 result.append(word_id)
                 loop += 1
             return result
@@ -93,11 +92,6 @@ class Encoder(nn.Module):
         source_k = self.embed_source(sentence_words)
         source_k = self.drop_source(source_k)
         hx, cx = self.lstm_source(source_k, (hx, cx) )
-        return hx, cx
-
-    def initHidden(self):
-        hx = torch.zeros(batch_size, self.hidden_size).cuda()
-        cx = torch.zeros(batch_size, self.hidden_size).cuda()
         return hx, cx
 
 class Decoder(nn.Module):
