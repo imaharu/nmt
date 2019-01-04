@@ -21,14 +21,10 @@ class EncoderDecoder(nn.Module):
     def forward(self, source=None, target=None, train=False, phase=0):
         if train:
             loss = 0
-            source = source.t()
             target = target.t()
-
             hx_list , hx_cx = self.encoder(source)
-
             # attenstion mask for inf
-            mask_tensor = source.eq(PADDING).unsqueeze(-1)
-
+            mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             lines_t_last = target[1:]
             lines_f_last = target[:(len(source) - 1)]
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
@@ -40,10 +36,9 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            source = source.t()
             hx_list , hx_cx = self.encoder(source)
 
-            mask_tensor = source.eq(PADDING).unsqueeze(-1)
+            mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
 
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
@@ -64,7 +59,7 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
 
     def forward(self, sentences):
         input_lengths = torch.tensor(
@@ -72,11 +67,11 @@ class Encoder(nn.Module):
         embed = self.embed_source(sentences)
         embed = self.drop_source(embed)
         embed = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
-        packed_output, hx_cx = self.lstm(embed)
+        packed_output, (hx_cx) = self.lstm(embed)
         output, _ = rnn.pad_packed_sequence(
-            packed_output, batch_first=True
+            packed_output
         )
-        return output, hx_cx
+        return output, (hx_cx)
 
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
