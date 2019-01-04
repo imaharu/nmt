@@ -1,0 +1,9 @@
+mt*
+__pycache__/get_data.cpython-36.pyc
+*.model
+__pycache__
+source_vocab
+target_vocab
+data/*
+vocab/*vocab
+pred.txt
