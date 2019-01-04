@@ -7,6 +7,9 @@ from torch.nn.utils.rnn import *
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
+def map_tuple(func, tup):
+    return tuple(map(func, tup))
+
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
@@ -20,7 +23,6 @@ class EncoderDecoder(nn.Module):
             cx = torch.zeros(source_len, hidden_size).cuda()
             return hx, cx
 
-        hx_list = []
         lmasks = []
         loss = 0
         if train:
@@ -28,49 +30,43 @@ class EncoderDecoder(nn.Module):
             hx, cx = init(source_len)
             source = source.t()
             target = target.t()
-
+            hx_list , hx_cx = self.encoder(source, hx, cx)
             for words in source:
-                hx , cx = self.encoder(words, hx, cx)
-                hx_list.append(hx)
                 masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
                 lmasks.append( torch.unsqueeze(masks, 0) )
 
-            hx_list = torch.stack(hx_list, 0)
             lmasks = torch.cat(lmasks)
-
             inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
 
             lines_t_last = target[1:]
             lines_f_last = target[:(len(source) - 1)]
-
+            hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
             for words_f, word_t in zip(lines_f_last, lines_t_last):
-                hx , cx = self.decoder(words_f, hx, cx)
+                hx , cx = self.decoder(words_f, hx_cx)
                 hx_new = self.attention(hx, hx_list, lmasks, inf)
                 loss += F.cross_entropy(
                     self.decoder.linear(hx_new), word_t , ignore_index=0)
-
             return loss
 
         elif phase == 1:
             source_len = len(source)
             hx, cx = init(source_len)
             source = source.t()
+            hx_list , hx_cx = self.encoder(source, hx, cx)
             for words in source:
-                hx , cx = self.encoder(words, hx, cx)
-                hx_list.append(hx)
                 masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
                 lmasks.append( torch.unsqueeze(masks, 0) )
 
-            hx_list = torch.stack(hx_list, 0)
             lmasks = torch.cat(lmasks)
             inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
-            loop = 0
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
+            hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
             result = []
+            loop = 0
             while True:
-                hx , cx = self.decoder(word_id, hx, cx)
+                hx , cx = self.decoder(word_id, hx_cx)
                 hx_new = self.attention(hx, hx_list, lmasks, inf)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 loop += 1
@@ -82,21 +78,14 @@ class EncoderDecoder(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size):
         super(Encoder, self).__init__()
-        self.hidden_size = hidden_size
-        self.source_size = source_size
         self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
-        self.lstm_source = nn.LSTMCell(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size)
 
-    def forward(self, sentence_words, hx, cx):
-        source_k = self.embed_source(sentence_words)
-        source_k = self.drop_source(source_k)
-        before_hx , before_cx = hx, cx
-        hx, cx = self.lstm_source(source_k, (hx, cx) )
-        mask = create_mask(sentence_words)
-        hx = torch.where(mask == 0, before_hx, hx)
-        cx = torch.where(mask == 0, before_cx, cx)
-        return hx, cx
+    def forward(self, sentences, hx, cx):
+        embed = self.embed_source(sentences)
+        embed = self.drop_source(embed)
+        return self.lstm(embed)
 
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
@@ -106,11 +95,11 @@ class Decoder(nn.Module):
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
-    def forward(self, target_words, hx, cx):
+    def forward(self, target_words, hx_cx):
         target_k = self.embed_target(target_words)
         target_k = self.drop_target(target_k)
         #before_hx , before_cx = hx, cx
-        hx, cx = self.lstm_target(target_k, (hx, cx) )
+        hx, cx = self.lstm_target(target_k, hx_cx )
         #mask = create_mask(target_words)
         #hx = torch.where(mask == 0, before_hx, hx)
         #cx = torch.where(mask == 0, before_cx, cx)
