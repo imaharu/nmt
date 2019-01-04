@@ -19,12 +19,11 @@ class Evaluate:
         model.eval()
         sum_score = 0
         for index, source in enumerate(self.val_iter):
+            source = source.cuda()
             sentence_ids = model(source=source, phase=1)
             sentence = self.TranslateSentence(sentence_ids)
-            self.gold_sentence[index]
-            sum_score += sentence_bleu(sentence, self.gold_sentence[index] ,weights=(1,))
-            break
-        return sum_score / 500
+            sum_score += sentence_bleu(self.gold_sentence[index], sentence ,weights=(1,))
+        return sum_score / len(self.val_iter)
 
     def GetTranslateDict(self, target_dict):
         translate_dict = {}
