@@ -12,6 +12,7 @@ class EncoderDecoder(nn.Module):
         super(EncoderDecoder, self).__init__()
         self.encoder = Encoder(source_size, hidden_size)
         self.decoder = Decoder(target_size, hidden_size)
+        self.attention = Attention(hidden_size)
 
     def forward(self, source=None, target=None, train=False, phase=0):
         def init(source_len):
@@ -45,7 +46,7 @@ class EncoderDecoder(nn.Module):
 
             for words_f, word_t in zip(lines_f_last, lines_t_last):
                 hx , cx = self.decoder(words_f, hx, cx)
-                hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
+                hx_new = self.attention(hx, hx_list, lmasks, inf)
                 loss += F.cross_entropy(
                     self.decoder.linear(hx_new), word_t , ignore_index=0)
 
@@ -65,13 +66,12 @@ class EncoderDecoder(nn.Module):
             lmasks = torch.cat(lmasks)
             inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
-
             loop = 0
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             while True:
                 hx , cx = self.decoder(word_id, hx, cx)
-                hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
+                hx_new = self.attention(hx, hx_list, lmasks, inf)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 loop += 1
                 if loop >= 50 or int(word_id) == target_dict['[STOP]']:
@@ -91,7 +91,11 @@ class Encoder(nn.Module):
     def forward(self, sentence_words, hx, cx):
         source_k = self.embed_source(sentence_words)
         source_k = self.drop_source(source_k)
+        before_hx , before_cx = hx, cx
         hx, cx = self.lstm_source(source_k, (hx, cx) )
+        mask = create_mask(sentence_words)
+        hx = torch.where(mask == 0, before_hx, hx)
+        cx = torch.where(mask == 0, before_cx, cx)
         return hx, cx
 
 class Decoder(nn.Module):
@@ -101,19 +105,27 @@ class Decoder(nn.Module):
         self.drop_target = nn.Dropout(p=0.2)
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
-        self.attention_linear = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(self, target_words, hx, cx):
         target_k = self.embed_target(target_words)
         target_k = self.drop_target(target_k)
+        #before_hx , before_cx = hx, cx
         hx, cx = self.lstm_target(target_k, (hx, cx) )
+        #mask = create_mask(target_words)
+        #hx = torch.where(mask == 0, before_hx, hx)
+        #cx = torch.where(mask == 0, before_cx, cx)
         return hx, cx
 
-    def attention(self, decoder_hx, ew_hx_list, ew_mask, inf):
+class Attention(nn.Module):
+    def __init__(self, hidden_size):
+        super(Attention, self).__init__()
+        self.linear = nn.Linear(hidden_size * 2, hidden_size)
+
+    def forward(self, decoder_hx, ew_hx_list, ew_mask, inf):
         attention_weights = (decoder_hx * ew_hx_list).sum(-1, keepdim=True)
         masked_score = torch.where(ew_mask == 0, inf, attention_weights)
         align_weight = F.softmax(masked_score, 0)
         content_vector = (align_weight * ew_hx_list).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)
-        hx_attention = torch.tanh(self.attention_linear(concat))
+        hx_attention = torch.tanh(self.linear(concat))
         return hx_attention
