@@ -57,7 +57,6 @@ class EncoderDecoder(nn.Module):
             for words in source:
                 masks = torch.cat( [ words.unsqueeze(-1) ] , 1)
                 lmasks.append( torch.unsqueeze(masks, 0) )
-
             lmasks = torch.cat(lmasks)
             inf = torch.full((len(source), source_len), float("-inf")).cuda()
             inf = torch.unsqueeze(inf, -1)
@@ -98,11 +97,7 @@ class Decoder(nn.Module):
     def forward(self, target_words, hx_cx):
         target_k = self.embed_target(target_words)
         target_k = self.drop_target(target_k)
-        #before_hx , before_cx = hx, cx
         hx, cx = self.lstm_target(target_k, hx_cx )
-        #mask = create_mask(target_words)
-        #hx = torch.where(mask == 0, before_hx, hx)
-        #cx = torch.where(mask == 0, before_cx, cx)
         return hx, cx
 
 class Attention(nn.Module):
