@@ -24,7 +24,7 @@ class Evaluate:
             self.gold_sentence[index]
             sum_score += sentence_bleu(sentence, self.gold_sentence[index] ,weights=(1,))
             break
-        return sum_score / 500 
+        return sum_score / 500
 
     def GetTranslateDict(self, target_dict):
         translate_dict = {}

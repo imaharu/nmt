@@ -70,13 +70,13 @@ class EncoderDecoder(nn.Module):
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             while True:
-                if loop >= 50 or int(word_id) == target_dict['[STOP]']:
-                    break
                 hx , cx = self.decoder(word_id, hx, cx)
                 hx_new = self.decoder.attention(hx, hx_list, lmasks, inf)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
-                result.append(word_id)
                 loop += 1
+                if loop >= 50 or int(word_id) == target_dict['[STOP]']:
+                    break
+                result.append(word_id)
             return result
 
 class Encoder(nn.Module):

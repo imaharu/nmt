@@ -38,12 +38,13 @@ if __name__ == '__main__':
 
     model = EncoderDecoder(source_size, target_size, hidden_size).cuda(device=device)
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
+    optimizer = torch.optim.Adagrad( model.parameters(), lr=0.15, initial_accumulator_value=0.1)
 
     max_score = 0
     score = 0
 
     save_model_dir = "{}/{}".format("trained_model", args.save_path)
+    best_model_dir = "{}/{}".format("trained_model", "best-model")
 
     calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
@@ -60,13 +61,15 @@ if __name__ == '__main__':
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
-        #score = calc_blue.GetBlueScore(model)
-        #print("mac_score: {}".format(max_score))
-        #print("score: {}".format(score))
-        #if max_score < score:
-        #    max_score = score
-        #    save_model_filename = save_model_dir + str(epoch + 1) + ".model"
-        #    torch.save(model.state_dict(), save_model_filename)
+
+#        score = calc_blue.GetBlueScore(model)
+#        print("mac_score: {}".format(max_score))
+#        print("score: {}".format(score))
+#        if max_score < score:
+#            max_score = score
+#            best_model_filename = "{}-epoch{}{}".format(save_model_dir, str(epoch + 1),".model")
+#            torch.save(model.state_dict(), best_model_filename)
+
         if (epoch + 1) == args.epoch:
             save_model_filename = save_model_dir + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), save_model_filename)
