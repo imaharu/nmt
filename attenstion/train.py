@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     model = EncoderDecoder(source_size, target_size, hidden_size).cuda(device=device)
     model.train()
-    optimizer = torch.optim.Adagrad( model.parameters(), lr=0.15, initial_accumulator_value=0.1)
+    optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 
     max_score = 0
     score = 0
@@ -69,7 +69,6 @@ if __name__ == '__main__':
 #            max_score = score
 #            best_model_filename = "{}-epoch{}{}".format(save_model_dir, str(epoch + 1),".model")
 #            torch.save(model.state_dict(), best_model_filename)
-
         if (epoch + 1) == args.epoch:
             save_model_filename = save_model_dir + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), save_model_filename)

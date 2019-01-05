@@ -69,9 +69,9 @@ if args.mode == 0:
     train_source = train_source[:6]
     train_target = train_target[:6]
     val_source = val_source[:3]
-    hidden_size = 4
+    hidden_size = 2
     embed_size = 4
-    batch_size = 2
+    batch_size = 3
     epoch = 2
 
 elif args.mode == 1:
