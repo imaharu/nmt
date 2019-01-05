@@ -26,7 +26,7 @@ class EncoderDecoder(nn.Module):
             # attenstion mask for inf
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             lines_t_last = target[1:]
-            lines_f_last = target[:(len(source) - 1)]
+            lines_f_last = target[:(len(source.t()) - 1)]
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
             for words_f, word_t in zip(lines_f_last, lines_t_last):
                 hx , cx = self.decoder(words_f, hx_cx)
@@ -66,8 +66,8 @@ class Encoder(nn.Module):
             [seq.size(-1) for seq in sentences], device=sentences.device)
         embed = self.embed_source(sentences)
         embed = self.drop_source(embed)
-        embed = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
-        packed_output, (hx_cx) = self.lstm(embed)
+        sequence = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
+        packed_output, (hx_cx) = self.lstm(sequence)
         output, _ = rnn.pad_packed_sequence(
             packed_output
         )
