@@ -22,7 +22,7 @@ class EncoderDecoder(nn.Module):
             loss = 0
             target = target.t()
             hx_list , hx_cx = self.encoder(source)
-            # attenstion mask for inf
+
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             lines_t_last = target[1:]
             lines_f_last = target[:(len(source.t()) - 1)]

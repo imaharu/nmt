@@ -21,10 +21,9 @@ class MyDataset(Dataset):
         return len(self.source)
 
     def collater(self, items):
+        items.sort(key=lambda x: len(x[0]), reverse=True)
         source_items = [item[0] for item in items]
         target_items = [item[1] for item in items]
-        source_items.sort(key=lambda x: len(x), reverse=True)
-        target_items.sort(key=lambda x: len(x), reverse=True)
         source_padding = pad_sequence(source_items, batch_first=True)
         target_padding = pad_sequence(target_items, batch_first=True)
         return [source_padding, target_padding]
