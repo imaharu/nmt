@@ -71,7 +71,7 @@ if args.mode == 0:
     val_source = val_source[:3]
     hidden_size = 4
     embed_size = 4
-    batch_size = 2
+    batch_size = 3
     epoch = 2
 
 elif args.mode == 1:

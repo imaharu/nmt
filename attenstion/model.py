@@ -28,11 +28,13 @@ class EncoderDecoder(nn.Module):
             lines_t_last = target[1:]
             lines_f_last = target[:(len(source.t()) - 1)]
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
-            for words_f, word_t in zip(lines_f_last, lines_t_last):
-                hx , cx = self.decoder(words_f, hx_cx)
+            hx = hx_cx[0]
+            cx = hx_cx[1]
+            for words_f, words_t in zip(lines_f_last, lines_t_last):
+                hx, cx = self.decoder(words_f, hx, cx)
                 hx_new = self.attention(hx, hx_list, mask_tensor)
                 loss += F.cross_entropy(
-                    self.decoder.linear(hx_new), word_t , ignore_index=0)
+                    self.decoder.linear(hx_new), words_t , ignore_index=0)
             return loss
 
         elif phase == 1:
@@ -40,12 +42,14 @@ class EncoderDecoder(nn.Module):
 
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
+            hx = hx_cx[0]
+            cx = hx_cx[1]
 
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
             while True:
-                hx , cx = self.decoder(word_id, hx_cx)
+                hx , cx = self.decoder(word_id, hx, cx)
                 hx_new = self.attention(hx, hx_list, mask_tensor)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 loop += 1
@@ -81,10 +85,10 @@ class Decoder(nn.Module):
         self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
-    def forward(self, target_words, hx_cx):
+    def forward(self, target_words, hx, cx):
         embed = self.embed_target(target_words)
         embed = self.drop_target(embed)
-        hx, cx = self.lstm_target(embed, hx_cx )
+        hx, cx = self.lstm_target(embed, (hx, cx) )
         return hx, cx
 
 class Attention(nn.Module):
@@ -92,11 +96,11 @@ class Attention(nn.Module):
         super(Attention, self).__init__()
         self.linear = nn.Linear(hidden_size * 2, hidden_size)
 
-    def forward(self, decoder_hx, ew_hx_list, mask_tensor):
-        attention_weights = (decoder_hx * ew_hx_list).sum(-1, keepdim=True)
+    def forward(self, decoder_hx, hx_list, mask_tensor):
+        attention_weights = (decoder_hx * hx_list).sum(-1, keepdim=True)
         masked_score = attention_weights.masked_fill_(mask_tensor, float('-inf'))
         align_weight = F.softmax(masked_score, 0)
-        content_vector = (align_weight * ew_hx_list).sum(0)
+        content_vector = (align_weight * hx_list).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)
         hx_attention = torch.tanh(self.linear(concat))
         return hx_attention
