@@ -21,14 +21,11 @@ class EncoderDecoder(nn.Module):
         if train:
             loss = 0
             target = target.t()
-            hx_list , hx_cx = self.encoder(source)
+            hx_list , hx, cx = self.encoder(source)
 
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             lines_t_last = target[1:]
             lines_f_last = target[:(len(source.t()) - 1)]
-            hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
-            hx = hx_cx[0]
-            cx = hx_cx[1]
             for words_f, words_t in zip(lines_f_last, lines_t_last):
                 hx, cx = self.decoder(words_f, hx, cx)
                 hx_new = self.attention(hx, hx_list, mask_tensor)
@@ -37,12 +34,8 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            hx_list , hx_cx = self.encoder(source)
-
+            hx_list , hx, cx = self.encoder(source)
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
-            hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
-            hx = hx_cx[0]
-            cx = hx_cx[1]
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
@@ -64,6 +57,10 @@ class Encoder(nn.Module):
         self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
 
     def forward(self, sentences):
+        '''
+            return
+                encoder_ouput, hx, cx
+        '''
         input_lengths = torch.tensor(
             [seq.size(-1) for seq in sentences])
         embed = self.embed_source(sentences)
@@ -73,7 +70,8 @@ class Encoder(nn.Module):
         output, _ = rnn.pad_packed_sequence(
             packed_output
         )
-        return output, (hx_cx)
+        hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
+        return output, hx_cx[0], hx_cx[1]
 
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
