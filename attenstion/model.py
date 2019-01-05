@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.rnn as rnn
-#from torch.nn.utils.rnn import *
 
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
@@ -66,7 +65,7 @@ class Encoder(nn.Module):
 
     def forward(self, sentences):
         input_lengths = torch.tensor(
-            [seq.size(-1) for seq in sentences], device=sentences.device)
+            [seq.size(-1) for seq in sentences])
         embed = self.embed_source(sentences)
         embed = self.drop_source(embed)
         sequence = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
