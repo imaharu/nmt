@@ -44,7 +44,6 @@ class EncoderDecoder(nn.Module):
             hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
             hx = hx_cx[0]
             cx = hx_cx[1]
-
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
