@@ -50,11 +50,12 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
-        tqdm_desc = "[Epoch{:>3}]".format(epoch)
+        tqdm_desc = "[Epoch{:>3}]".format(epoch + 1)
         tqdm_bar_format = "{l_bar}{bar}|{n_fmt}/{total_fmt} [{elapsed}<{remaining}]"
         tqdm_kwargs = {'desc': tqdm_desc, 'smoothing': 0.1, 'ncols': 100,
                     'bar_format': tqdm_bar_format, 'leave': False}
 
+        model.train()
         for iters in tqdm(train_iter, **tqdm_kwargs):
             optimizer.zero_grad()
             loss = train(model, iters[0].cuda(), iters[1].cuda())

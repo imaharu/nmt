@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Sequence to Sequence Model by usin
 parser.add_argument('--mode', type=int, default=0,
                     help='0: debug / 1: train / 2: eval')
 '''train details'''
-parser.add_argument('--epoch', '-e', type=int, default=20,
+parser.add_argument('--epoch', '-e', type=int, default=10,
                     help='Number of sweeps over the dataset to train')
 
 '''train_num embed hidden batch'''
@@ -28,7 +28,7 @@ parser.add_argument('--embed_size', type=int, default=256,
                     help='size of embed size for word representation')
 parser.add_argument('--hidden_size', type=int, default=256,
                     help='number of hidden units')
-parser.add_argument('--batch_size', '-b', type=int, default=50,
+parser.add_argument('--batch_size', '-b', type=int, default=100,
                     help='Number of batchsize')
 
 parser.add_argument('--result_path', '-r' ,type=str)

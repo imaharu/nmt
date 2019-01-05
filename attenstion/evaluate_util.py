@@ -22,7 +22,7 @@ class Evaluate:
             source = source.cuda()
             sentence_ids = model(source=source, phase=1)
             sentence = self.TranslateSentence(sentence_ids)
-            sum_score += sentence_bleu(self.gold_sentence[index], sentence ,weights=(1,))
+            sum_score += sentence_bleu(self.gold_sentence[index], sentence, weights=(1,0,0,0))
         return sum_score / len(self.val_iter)
 
     def GetTranslateDict(self, target_dict):
