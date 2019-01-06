@@ -7,13 +7,11 @@ import torch.nn.utils.rnn as rnn
 def create_mask(source_sentence_words):
     return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
 
-def map_tuple(func, tup):
-    return tuple(map(func, tup))
-
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
-        self.encoder = Encoder(source_size, hidden_size)
+        opts = { "bidirectional": True }
+        self.encoder = Encoder(source_size, hidden_size, opts)
         self.decoder = Decoder(target_size, hidden_size)
         self.attention = Attention(hidden_size)
 
@@ -50,28 +48,37 @@ class EncoderDecoder(nn.Module):
             return result
 
 class Encoder(nn.Module):
-    def __init__(self, source_size, hidden_size):
+    def __init__(self, source_size, hidden_size, opts):
         super(Encoder, self).__init__()
+        self.opts = opts
         self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True, bidirectional=self.opts["bidirectional"])
 
     def forward(self, sentences):
         '''
             return
                 encoder_ouput, hx, cx
+            option
+                bidirectional
         '''
         input_lengths = torch.tensor(
             [seq.size(-1) for seq in sentences])
         embed = self.embed_source(sentences)
         embed = self.drop_source(embed)
         sequence = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
-        packed_output, (hx_cx) = self.lstm(sequence)
+
+        packed_output, (hx, cx) = self.lstm(sequence)
         output, _ = rnn.pad_packed_sequence(
             packed_output
         )
-        hx_cx = map_tuple(lambda x: x.squeeze(0), hx_cx)
-        return output, hx_cx[0], hx_cx[1]
+        if self.opts["bidirectional"]:
+            output = output[:, :, :hidden_size] + output[:, :, hidden_size:]
+            hx = hx.view(-1, 2 , batch_size, hidden_size).sum(1)
+            cx = cx.view(-1, 2 , batch_size, hidden_size).sum(1)
+        hx = hx.view(batch_size, -1)
+        cx = cx.view(batch_size, -1)
+        return output, hx, cx
 
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
