@@ -19,7 +19,7 @@ if __name__ == '__main__':
     eval_iter = DataLoader(data_set, batch_size=1, collate_fn=data_set.collater)
 
     Evaluate = Evaluate(target_dict)
-    pred_file = open(str(args.save_path), 'w', encoding="utf-8")
+    pred_file = open(str(args.result_path), 'w', encoding="utf-8")
     for iters in eval_iter:
         pred = model(source=iters.cuda(), phase=1)
         sentence = Evaluate.TranslateSentence(pred)
