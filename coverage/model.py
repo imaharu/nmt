@@ -18,13 +18,11 @@ class EncoderDecoder(nn.Module):
     def forward(self, source=None, target=None, train=False, phase=0):
         if train:
             loss = 0
-            target = target.t()
-            encoder_outputs , encoder_feature ,hx, cx = self.encoder(source)
+            encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
 
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
-            lines_f_last = target[:-1]
-            lines_t_last = target[1:]
-            for words_f, words_t in zip(lines_f_last, lines_t_last):
+            target = target.t()
+            for words_f, words_t in zip(target[:-1],  target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
                 hx_new = self.attention(hx, encoder_outputs, encoder_feature , mask_tensor)
                 loss += F.cross_entropy(
@@ -32,14 +30,14 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            hx_list , hx, cx = self.encoder(source)
-            mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
+            encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
+            mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
             while True:
                 hx , cx = self.decoder(word_id, hx, cx)
-                hx_new = self.attention(hx, hx_list, mask_tensor)
+                hx_new = self.attention(hx, encoder_outputs, encoder_feature , mask_tensor)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 loop += 1
                 if loop >= 50 or int(word_id) == target_dict['[STOP]']:

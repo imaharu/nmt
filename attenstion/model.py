@@ -22,9 +22,7 @@ class EncoderDecoder(nn.Module):
             hx_list , hx, cx = self.encoder(source)
 
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
-            lines_f_last = target[:-1]
-            lines_t_last = target[1:]
-            for words_f, words_t in zip(lines_f_last, lines_t_last):
+            for words_f, words_t in zip(target[:-1] , target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
                 hx_new = self.attention(hx, hx_list, mask_tensor)
                 loss += F.cross_entropy(
