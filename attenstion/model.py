@@ -4,9 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.rnn as rnn
 
-def create_mask(source_sentence_words):
-    return torch.cat( [ source_sentence_words.unsqueeze(-1) ] * hidden_size, 1)
-
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
