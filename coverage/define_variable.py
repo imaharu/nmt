@@ -35,7 +35,7 @@ parser.add_argument('--result_path', '-r' ,type=str)
 parser.add_argument('--model_path', '-m' , type=str)
 parser.add_argument('--save_path', '-s' , type=str, default="train")
 
-parser.add_argument('--is_short_data', '-d' , type=int, default=1,
+parser.add_argument('--is_short_data', '-d' , type=int, default=True,
                     help='short: vocab20000, long: vocab100000')
 args = parser.parse_args()
 
