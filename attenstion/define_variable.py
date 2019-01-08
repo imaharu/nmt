@@ -17,8 +17,8 @@ logger.propagate = False
 ##### args #####
 parser = argparse.ArgumentParser(description='Sequence to Sequence Model by using Pytorch')
 ''' mode '''
-parser.add_argument('--mode', type=int, default=0,
-                    help='0: debug / 1: train / 2: eval')
+parser.add_argument('--mode', type=str, default="dubug",
+                    help='debug train eval')
 '''train details'''
 parser.add_argument('--epoch', '-e', type=int, default=10,
                     help='Number of sweeps over the dataset to train')
@@ -62,7 +62,7 @@ target_dict = pre_data.getVocab(target_vocab)
 source_size = len(source_dict)
 target_size = len(target_dict)
 
-if args.mode == 0:
+if args.mode == "debug":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
     val_source = pre_data.load(val_en, 0, source_dict)
@@ -74,7 +74,7 @@ if args.mode == 0:
     batch_size = 3
     epoch = 2
 
-elif args.mode == 1:
+elif args.mode == "train":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
     val_source = pre_data.load(val_en, 0, source_dict)
@@ -83,8 +83,9 @@ elif args.mode == 1:
     batch_size = args.batch_size
     epoch = args.epoch
 
-else:
+elif args.mode == "eval":
     batch_size = 1
+    embed_size = args.embed_size
     hidden_size = args.hidden_size
     test_en = "../train_data/eval.en"
     test_source = pre_data.load(test_en , 0, source_dict)
