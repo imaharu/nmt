@@ -7,7 +7,7 @@ import torch.nn.utils.rnn as rnn
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
-        opts = { "bidirectional": False }
+        opts = { "bidirectional": True }
         self.encoder = Encoder(source_size, hidden_size, opts)
         self.decoder = Decoder(target_size, hidden_size)
         self.attention = Attention(hidden_size)
