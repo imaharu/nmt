@@ -7,7 +7,7 @@ import torch.nn.utils.rnn as rnn
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
-        opts = { "bidirectional": True }
+        opts = { "bidirectional": False }
         self.encoder = Encoder(source_size, hidden_size, opts)
         self.decoder = Decoder(target_size, hidden_size)
         self.attention = Attention(hidden_size)
@@ -16,14 +16,13 @@ class EncoderDecoder(nn.Module):
         if train:
             loss = 0
             encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
             for words_f, words_t in zip(target[:-1],  target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
                 hx_new = self.attention(hx, encoder_outputs, encoder_feature , mask_tensor)
                 loss += F.cross_entropy(
-                    self.decoder.linear(hx_new), words_t , ignore_index=0)
+                   self.decoder.linear(hx_new), words_t , ignore_index=0)
             return loss
 
         elif phase == 1:
@@ -58,6 +57,7 @@ class Encoder(nn.Module):
             option
                 bidirectional
         '''
+        b = sentences.size(0)
         input_lengths = torch.tensor(
             [seq.size(-1) for seq in sentences])
         embed = self.embed_source(sentences)
@@ -68,15 +68,18 @@ class Encoder(nn.Module):
         encoder_outputs, _ = rnn.pad_packed_sequence(
             packed_output, batch_first=True
         )
+#        encoder_outputs, _ = rnn.pad_packed_sequence(
+#            packed_output
+#        )
         if self.opts["bidirectional"]:
             encoder_outputs = encoder_outputs[:, :, :hidden_size] + encoder_outputs[:, :, hidden_size:]
-            hx = hx.view(-1, 2 , batch_size, hidden_size).sum(1)
-            cx = cx.view(-1, 2 , batch_size, hidden_size).sum(1)
+            hx = hx.view(-1, 2 , b, hidden_size).sum(1)
+            cx = cx.view(-1, 2 , b, hidden_size).sum(1)
         encoder_outputs = encoder_outputs.contiguous()
         encoder_feature = encoder_outputs.view(-1, hidden_size)
         encoder_feature = self.W_h(encoder_feature)
-        hx = hx.view(batch_size, -1)
-        cx = cx.view(batch_size, -1)
+        hx = hx.view(b, -1)
+        cx = cx.view(b, -1)
         return encoder_outputs, encoder_feature, hx, cx
 
 class Decoder(nn.Module):

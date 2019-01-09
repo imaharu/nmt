@@ -16,25 +16,25 @@ class EncoderDecoder(nn.Module):
         if train:
             loss = 0
             target = target.t()
-            hx_list , hx, cx = self.encoder(source)
+            encoder_outputs , hx, cx = self.encoder(source)
 
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             for words_f, words_t in zip(target[:-1] , target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
-                hx_new = self.attention(hx, hx_list, mask_tensor)
+                hx_new = self.attention(hx, encoder_outputs, mask_tensor)
                 loss += F.cross_entropy(
                     self.decoder.linear(hx_new), words_t , ignore_index=0)
             return loss
 
         elif phase == 1:
-            hx_list , hx, cx = self.encoder(source)
+            encoder_outputs , hx, cx = self.encoder(source)
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
             while True:
                 hx , cx = self.decoder(word_id, hx, cx)
-                hx_new = self.attention(hx, hx_list, mask_tensor)
+                hx_new = self.attention(hx, encoder_outputs, mask_tensor)
                 word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
                 loop += 1
                 if loop >= 50 or int(word_id) == target_dict['[STOP]']:
@@ -57,6 +57,7 @@ class Encoder(nn.Module):
             option
                 bidirectional
         '''
+        b = sentences.size(0)
         input_lengths = torch.tensor(
             [seq.size(-1) for seq in sentences])
         embed = self.embed_source(sentences)
@@ -69,10 +70,10 @@ class Encoder(nn.Module):
         )
         if self.opts["bidirectional"]:
             output = output[:, :, :hidden_size] + output[:, :, hidden_size:]
-            hx = hx.view(-1, 2 , batch_size, hidden_size).sum(1)
-            cx = cx.view(-1, 2 , batch_size, hidden_size).sum(1)
-        hx = hx.view(batch_size, -1)
-        cx = cx.view(batch_size, -1)
+            hx = hx.view(-1, 2 , b, hidden_size).sum(1)
+            cx = cx.view(-1, 2 , b, hidden_size).sum(1)
+        hx = hx.view(b, -1)
+        cx = cx.view(b, -1)
         return output, hx, cx
 
 class Decoder(nn.Module):
