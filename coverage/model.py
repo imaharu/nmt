@@ -45,9 +45,9 @@ class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size, opts):
         super(Encoder, self).__init__()
         self.opts = opts
-        self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
+        self.embed_source = nn.Embedding(source_size, embed_size, padding_idx=0)
         self.drop_source = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True, bidirectional=self.opts["bidirectional"])
+        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True, bidirectional=self.opts["bidirectional"])
         self.W_h = nn.Linear(hidden_size, hidden_size)
 
     def forward(self, sentences):
@@ -85,9 +85,9 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
-        self.embed_target = nn.Embedding(target_size, hidden_size, padding_idx=0)
+        self.embed_target = nn.Embedding(target_size, embed_size, padding_idx=0)
         self.drop_target = nn.Dropout(p=0.2)
-        self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
+        self.lstm_target = nn.LSTMCell(embed_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
     def forward(self, target_words, hx, cx):
