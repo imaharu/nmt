@@ -18,7 +18,8 @@ class EncoderDecoder(nn.Module):
         if train:
             loss = 0
             encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-            #mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
+
+            # mask
             mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
             for words_f, words_t in zip(target[:-1],  target[1:]):
@@ -30,7 +31,7 @@ class EncoderDecoder(nn.Module):
 
         elif phase == 1:
             encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-            mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
+            mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0

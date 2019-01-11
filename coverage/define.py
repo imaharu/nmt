@@ -85,5 +85,6 @@ elif args.mode == "train":
 elif args.mode == "eval":
     batch_size = 1
     hidden_size = args.hidden_size
+    embed_size = args.embed_size
     test_en = "../train_data/eval.en"
     test_source = pre_data.load(test_en , 0, source_dict)
