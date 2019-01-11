@@ -1,4 +1,4 @@
-from define_variable import *
+from define import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,17 +30,10 @@ class Attention(nn.Module):
         dec_feature = self.W_s(decoder_hx)
         dec_feature = dec_feature.unsqueeze(0).expand(t_k, b, n)
         att_features = encoder_feature + dec_feature
-        att_features = self.v(att_features)
-        exit()
         e = torch.tanh(att_features)
         scores = self.v(e)
-        scores = scores.view(-1, t_k)
-        mask_tensor = mask_tensor.squeeze().view(b, -1)
-        attn_dist = F.softmax(scores, dim=1) * mask_tensor
-        attn_dist = attn_dist.unsqueeze(-1)
-
+        attn_dist = torch.softmax(scores, dim=0) * mask_tensor
         content_vector = (attn_dist * encoder_outputs).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)
         hx_attention = torch.tanh(self.linear(concat))
-        exit()
         return hx_attention

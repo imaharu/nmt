@@ -1,4 +1,4 @@
-from define_variable import *
+from define import *
 from encoder import *
 from decoder import *
 import torch
@@ -18,7 +18,8 @@ class EncoderDecoder(nn.Module):
         if train:
             loss = 0
             encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-            mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
+            #mask_tensor = source.t().eq(PADDING).unsqueeze(-1).float().cuda()
+            mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
             for words_f, words_t in zip(target[:-1],  target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
