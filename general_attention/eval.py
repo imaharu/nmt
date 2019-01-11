@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.utils.rnn import *
 from model import *
-from define_variable import *
+from define import *
 from dataset import *
 from evaluate_util import *
 
