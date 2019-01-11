@@ -1,4 +1,6 @@
 from define_variable import *
+from encoder import *
+from decoder import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -40,82 +42,3 @@ class EncoderDecoder(nn.Module):
                     break
                 result.append(word_id)
             return result
-
-class Encoder(nn.Module):
-    def __init__(self, source_size, hidden_size, opts):
-        super(Encoder, self).__init__()
-        self.opts = opts
-        self.embed_source = nn.Embedding(source_size, embed_size, padding_idx=0)
-        self.drop_source = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTM(embed_size, hidden_size, batch_first=True, bidirectional=self.opts["bidirectional"])
-        self.W_h = nn.Linear(hidden_size, hidden_size)
-
-    def forward(self, sentences):
-        '''
-            return
-                encoder_ouput, hx, cx
-            option
-                bidirectional
-        '''
-        b = sentences.size(0)
-        input_lengths = torch.tensor(
-            [seq.size(-1) for seq in sentences])
-        embed = self.embed_source(sentences)
-        embed = self.drop_source(embed)
-        sequence = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
-
-        packed_output, (hx, cx) = self.lstm(sequence)
-        encoder_outputs, _ = rnn.pad_packed_sequence(
-            packed_output, batch_first=True
-        )
-        if self.opts["bidirectional"]:
-            encoder_outputs = encoder_outputs[:, :, :hidden_size] + encoder_outputs[:, :, hidden_size:]
-            hx = hx.view(-1, 2 , b, hidden_size).sum(1)
-            cx = cx.view(-1, 2 , b, hidden_size).sum(1)
-        encoder_outputs = encoder_outputs.contiguous()
-        encoder_feature = encoder_outputs.view(-1, hidden_size)
-        encoder_feature = self.W_h(encoder_feature)
-        hx = hx.view(b, -1)
-        cx = cx.view(b, -1)
-        return encoder_outputs, encoder_feature, hx, cx
-
-class Decoder(nn.Module):
-    def __init__(self, target_size, hidden_size):
-        super(Decoder, self).__init__()
-        self.embed_target = nn.Embedding(target_size, embed_size, padding_idx=0)
-        self.drop_target = nn.Dropout(p=0.2)
-        self.lstm_target = nn.LSTMCell(embed_size, hidden_size)
-        self.linear = nn.Linear(hidden_size, target_size)
-
-    def forward(self, target_words, hx, cx):
-        embed = self.embed_target(target_words)
-        embed = self.drop_target(embed)
-        hx, cx = self.lstm_target(embed, (hx, cx) )
-        return hx, cx
-
-class Attention(nn.Module):
-    def __init__(self, hidden_size):
-        super(Attention, self).__init__()
-        self.W_s = nn.Linear(hidden_size, hidden_size)
-        self.v = nn.Linear(hidden_size, 1)
-        self.linear = nn.Linear(hidden_size * 2, hidden_size)
-
-    def forward(self, decoder_hx, encoder_outputs , encoder_feature , mask_tensor):
-        b, t_k, n = list(encoder_outputs.size())
-        dec_feature = self.W_s(decoder_hx)
-        dec_feature_expanded = dec_feature.unsqueeze(1).expand(b, t_k, n).contiguous()
-        dec_feature_expanded = dec_feature_expanded.view(-1, n)
-        att_features = encoder_feature + dec_feature_expanded
-        e = torch.tanh(att_features)
-        scores = self.v(e)
-        scores = scores.view(-1, t_k)
-        mask_tensor = mask_tensor.squeeze().view(b, -1)
-        attn_dist = F.softmax(scores, dim=1) * mask_tensor
-        attn_dist = attn_dist.unsqueeze(-1)
-
-        encoder_outputs = encoder_outputs.view(-1, b, n)
-        attn_dist = attn_dist.view(-1, b, 1)
-        content_vector = (attn_dist * encoder_outputs).sum(0)
-        concat = torch.cat((content_vector, decoder_hx), 1)
-        hx_attention = torch.tanh(self.linear(concat))
-        return hx_attention
