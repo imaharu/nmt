@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch.nn.utils.rnn import *
 import time
 import torch.optim as optim
-from define_variable import *
+from define import *
 from model import *
 from tqdm import tqdm
 from dataset import *
