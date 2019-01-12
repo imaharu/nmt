@@ -13,7 +13,7 @@ class EncoderDecoder(nn.Module):
         self.encoder = Encoder(source_size, hidden_size, self.opts)
         self.decoder = Decoder(target_size, hidden_size, self.opts)
 
-    def forward(self, source=None, target=None, train=False, phase=0):
+    def forward(self, source=None, target=None, train=False, generate=False):
         if train:
             loss = 0
             encoder_outputs , encoder_features , hx, cx = self.encoder(source)
@@ -36,7 +36,7 @@ class EncoderDecoder(nn.Module):
                     coverage_vector = next_coverage_vector
             return loss
 
-        elif phase == 1:
+        elif generate:
             encoder_outputs, encoder_features, hx, cx = self.encoder(source)
             mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()

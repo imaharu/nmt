@@ -21,7 +21,7 @@ if __name__ == '__main__':
     Evaluate = Evaluate(target_dict)
     pred_file = open(str(args.result_path), 'w', encoding="utf-8")
     for iters in eval_iter:
-        pred = model(source=iters.cuda(), phase=1)
+        pred = model(source=iters.cuda(), generate=True)
         sentence = Evaluate.TranslateSentence(pred)
         sentence = ' '.join(sentence)
         pred_file.write(sentence + '\n')
