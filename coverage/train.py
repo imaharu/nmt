@@ -23,7 +23,7 @@ if __name__ == '__main__':
         logger.debug("訓練文書数: " +  str(100000))
     logger.debug("hidden_size: " + str(hidden_size))
     logger.debug("embed_size: " +  str(embed_size))
-    logger.debug("epoch : " + str(epoch))
+    logger.debug("epoch : " + str(epochs))
     logger.debug("batch size : " +  str(batch_size))
 
     start = time.time()
@@ -35,8 +35,9 @@ if __name__ == '__main__':
 
     val_set = EvaluateDataset(val_source)
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
-
-    model = EncoderDecoder(source_size, target_size, hidden_size).cuda(device=device)
+    opts = { "bidirectional" : args.none_bid, "coverage_vector": args.coverage }
+    model = EncoderDecoder(source_size, target_size, opts).cuda(device=device)
+    print(model)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 
@@ -48,7 +49,7 @@ if __name__ == '__main__':
 
     calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
-    for epoch in range(args.epoch):
+    for epoch in range(epochs):
         print("epoch",epoch + 1)
         tqdm_desc = "[Epoch{:>3}]".format(epoch + 1)
         tqdm_bar_format = "{l_bar}{bar}|{n_fmt}/{total_fmt} [{elapsed}<{remaining}]"

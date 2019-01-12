@@ -8,3 +8,4 @@ data/*
 vocab/*vocab
 pred.txt
 cell.txt
+.nfs*
