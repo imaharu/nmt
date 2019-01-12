@@ -18,9 +18,9 @@ class Decoder(nn.Module):
         embed = self.embed_target(t_input)
         embed = self.drop_target(embed)
         hx, cx = self.lstm_target(embed, (hx, cx) )
-        final_dist, align_weight, coverage = self.attention(
+        final_dist, align_weight, next_coverage_vector = self.attention(
                 hx, encoder_outputs, encoder_features , coverage_vector, mask_tensor)
-        return final_dist, hx, cx, align_weight, coverage_vector
+        return final_dist, hx, cx, align_weight, next_coverage_vector
 
 class Attention(nn.Module):
     def __init__(self, opts):
@@ -30,7 +30,7 @@ class Attention(nn.Module):
         self.v = nn.Linear(hidden_size, 1)
         self.linear = nn.Linear(hidden_size * 2, hidden_size)
         if self.opts["coverage_vector"]:
-            self.coverage = self.Coverage()
+            self.coverage = Coverage()
 
     def forward(self, decoder_hx, encoder_outputs, encoder_features, coverage_vector, mask_tensor):
         t_k, b, n = list(encoder_outputs.size())
@@ -46,12 +46,12 @@ class Attention(nn.Module):
         align_weight = torch.softmax(scores, dim=0) * mask_tensor
 
         if self.opts["coverage_vector"]:
-            coverage_vector = self.coverage.getNextCoverage(coverage_vector, align_weight)
+            next_coverage_vector = self.coverage.getNextCoverage(coverage_vector, align_weight)
 
         content_vector = (align_weight * encoder_outputs).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)
         final_dist = torch.tanh(self.linear(concat))
-        return final_dist, align_weight, coverage_vector
+        return final_dist, align_weight, next_coverage_vector
 
 class Coverage(nn.Module):
     def __init__(self):
@@ -59,8 +59,12 @@ class Coverage(nn.Module):
         self.W_c = nn.Linear(1, hidden_size)
 
     def getFeature(self, coverage_vector, att_features):
+        coverage_vector = coverage_vector.view(-1, 1)
+        coverage_features = self.W_c(coverage_vector).unsqueeze(-1)
+        coverage_features = coverage_features.view(-1, att_features.size(1), 2)
         att_features += coverage_features
         return att_features
 
     def getNextCoverage(self, coverage_vector, align_weight):
-        return 0
+        next_coverage_vector = coverage_vector + align_weight
+        return next_coverage_vector

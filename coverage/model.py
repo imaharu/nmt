@@ -9,7 +9,7 @@ import torch.nn.utils.rnn as rnn
 class EncoderDecoder(nn.Module):
     def __init__(self, source_size, target_size, hidden_size):
         super(EncoderDecoder, self).__init__()
-        self.opts = { "bidirectional": True, "coverage_vector" : False}
+        self.opts = { "bidirectional": True, "coverage_vector" : True}
         self.encoder = Encoder(source_size, hidden_size, self.opts)
         self.decoder = Decoder(target_size, hidden_size, self.opts)
 
@@ -21,16 +21,18 @@ class EncoderDecoder(nn.Module):
             # mask
             mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
-            coverage_vector = 0
+            coverage_vector = torch.zeros(source.t().size()).unsqueeze(-1).cuda()
             for words_f, words_t in zip(target[:-1],  target[1:]):
                 final_dist, hx, cx, align_weight, next_coverage_vector = self.decoder(
                     words_f, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
 
                 loss += F.cross_entropy(
                    self.decoder.linear(final_dist), words_t , ignore_index=0)
-
                 if self.opts["coverage_vector"]:
-                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 1)
+                    align_weight = align_weight.squeeze()
+                    coverage_vector = coverage_vector.squeeze()
+                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 0)
+                    step_coverage_loss = torch.mean(step_coverage_loss)
                     cov_loss_wt = 1
                     loss = loss + (cov_loss_wt * step_coverage_loss)
                     coverage_vector = next_coverage_vector
@@ -48,8 +50,13 @@ class EncoderDecoder(nn.Module):
                     word_id, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
 
                 if self.opts["coverage_vector"]:
-                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 1)
-                    coverage = next_coverage
+                    align_weight = align_weight.squeeze()
+                    coverage_vector = coverage_vector.squeeze()
+                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 0)
+                    step_coverage_loss = torch.mean(step_coverage_loss)
+                    cov_loss_wt = 1
+                    loss = loss + (cov_loss_wt * step_coverage_loss)
+                    coverage_vector = next_coverage_vector
 
                 word_id = torch.tensor([ torch.argmax(
                         F.softmax(self.decoder.linear(final_dist), dim=1).data[0]) ]).cuda()
