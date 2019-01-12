@@ -23,7 +23,7 @@ if __name__ == '__main__':
         logger.debug("訓練文書数: " +  str(100000))
     logger.debug("hidden_size: " + str(hidden_size))
     logger.debug("embed_size: " +  str(embed_size))
-    logger.debug("epoch : " + str(epoch))
+    logger.debug("epoch : " + str(epochs))
     logger.debug("batch size : " +  str(batch_size))
 
     start = time.time()
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
-    for epoch in range(args.epoch):
+    for epoch in range(epochs):
         print("epoch",epoch + 1)
         tqdm_desc = "[Epoch{:>3}]".format(epoch + 1)
         tqdm_bar_format = "{l_bar}{bar}|{n_fmt}/{total_fmt} [{elapsed}<{remaining}]"

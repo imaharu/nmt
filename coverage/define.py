@@ -72,7 +72,7 @@ if args.mode == "debug":
     hidden_size = 2
     embed_size = 4
     batch_size = 3
-    epoch = 2
+    epochs = 2
 
 elif args.mode == "train":
     train_source = pre_data.load(train_en , 0, source_dict)
@@ -81,7 +81,7 @@ elif args.mode == "train":
     hidden_size = args.hidden_size
     embed_size = args.embed_size
     batch_size = args.batch_size
-    epoch = args.epoch
+    epochs = args.epoch
 elif args.mode == "eval":
     batch_size = 1
     hidden_size = args.hidden_size

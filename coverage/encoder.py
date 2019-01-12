@@ -35,7 +35,7 @@ class Encoder(nn.Module):
             encoder_outputs = encoder_outputs[:, :, :hidden_size] + encoder_outputs[:, :, hidden_size:]
             hx = hx.view(-1, 2 , b, hidden_size).sum(1)
             cx = cx.view(-1, 2 , b, hidden_size).sum(1)
-        encoder_feature = self.W_h(encoder_outputs)
+        encoder_features = self.W_h(encoder_outputs)
         hx = hx.view(b, -1)
         cx = cx.view(b, -1)
-        return encoder_outputs, encoder_feature, hx, cx
+        return encoder_outputs, encoder_features, hx, cx
