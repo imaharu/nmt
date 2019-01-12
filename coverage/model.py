@@ -37,7 +37,7 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
+            encoder_outputs, encoder_features, hx, cx = self.encoder(source)
             mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
@@ -45,10 +45,10 @@ class EncoderDecoder(nn.Module):
             coverage_vector = 0
             while True:
                 final_dist, hx, cx, align_weight, next_coverage = self.decoder(
-                    words_f, hx, cx, encoder_outputs, encoder_features, coverage, mask_tensor)
+                    word_id, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
 
                 if self.opts["coverage_vector"]:
-                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage), 1)
+                    step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 1)
                     coverage = next_coverage
 
                 word_id = torch.tensor([ torch.argmax(
