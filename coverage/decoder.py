@@ -61,7 +61,7 @@ class Coverage(nn.Module):
     def getFeature(self, coverage_vector, att_features):
         coverage_vector = coverage_vector.view(-1, 1)
         coverage_features = self.W_c(coverage_vector).unsqueeze(-1)
-        coverage_features = coverage_features.view(-1, att_features.size(1), 2)
+        coverage_features = coverage_features.view(-1, att_features.size(1), hidden_size)
         att_features += coverage_features
         return att_features
 
