@@ -35,8 +35,9 @@ if __name__ == '__main__':
 
     val_set = EvaluateDataset(val_source)
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
-
-    model = EncoderDecoder(source_size, target_size, hidden_size).cuda(device=device)
+    opts = { "bidirectional" : args.none_bid, "coverage_vector": args.coverage }
+    model = EncoderDecoder(source_size, target_size, opts).cuda(device=device)
+    print(model)
     model.train()
     optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
 

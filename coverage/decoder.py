@@ -37,7 +37,6 @@ class Attention(nn.Module):
         dec_feature = self.W_s(decoder_hx)
         dec_feature = dec_feature.unsqueeze(0).expand(t_k, b, n)
         att_features = encoder_features + dec_feature
-
         if self.opts["coverage_vector"]:
             att_features = self.coverage.getFeature(coverage_vector, att_features)
 
@@ -47,6 +46,8 @@ class Attention(nn.Module):
 
         if self.opts["coverage_vector"]:
             next_coverage_vector = self.coverage.getNextCoverage(coverage_vector, align_weight)
+        else:
+            next_coverage_vector = coverage_vector
 
         content_vector = (align_weight * encoder_outputs).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)

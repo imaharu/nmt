@@ -37,8 +37,10 @@ parser.add_argument('--save_path', '-s' , type=str, default="train")
 
 parser.add_argument('--is_short_data', '-d' , type=int, default=True,
                     help='short: vocab20000, long: vocab100000')
-args = parser.parse_args()
 
+parser.add_argument('--none_bid', action='store_false')
+parser.add_argument('--coverage', action='store_true')
+args = parser.parse_args()
 ##### end #####
 
 if args.is_short_data:
@@ -61,7 +63,6 @@ target_dict = pre_data.getVocab(target_vocab)
 
 source_size = len(source_dict)
 target_size = len(target_dict)
-
 if args.mode == "debug":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
