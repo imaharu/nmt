@@ -11,7 +11,8 @@ from evaluate_util import *
 
 if __name__ == '__main__':
     device = torch.device('cuda:0')
-    model = EncoderDecoder(source_size, target_size, hidden_size).to(device)
+    opts = { "bidirectional" : args.none_bid, "coverage_vector": args.coverage }
+    model = EncoderDecoder(source_size, target_size, opts).to(device)
     state_dict = torch.load('trained_model/' + str(args.model_path))
     model.load_state_dict(state_dict)
     model.eval()

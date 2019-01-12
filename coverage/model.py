@@ -27,13 +27,14 @@ class EncoderDecoder(nn.Module):
                     words_f, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
                 loss += F.cross_entropy(
                    self.decoder.linear(final_dist), words_t , ignore_index=0)
+
                 if self.opts["coverage_vector"]:
                     align_weight = align_weight.squeeze()
                     coverage_vector = coverage_vector.squeeze()
                     step_coverage_loss = torch.sum(torch.min(align_weight, coverage_vector), 0)
                     step_coverage_loss = torch.mean(step_coverage_loss)
                     cov_loss_wt = 1
-                    loss = loss + (cov_loss_wt * step_coverage_loss)
+                    loss += (cov_loss_wt * step_coverage_loss)
                     coverage_vector = next_coverage_vector
             return loss
 
@@ -45,7 +46,7 @@ class EncoderDecoder(nn.Module):
             loop = 0
             coverage_vector = torch.zeros(source.t().size()).unsqueeze(-1).cuda()
             while True:
-                final_dist, hx, cx, align_weight, next_coverage_vector = self.decoder(
+                final_dist, hx, cx, _, next_coverage_vector = self.decoder(
                     word_id, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
 
                 if self.opts["coverage_vector"]:
