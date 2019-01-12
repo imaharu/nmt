@@ -32,8 +32,8 @@ class Attention(nn.Module):
         att_features = encoder_feature + dec_feature
         e = torch.tanh(att_features)
         scores = self.v(e)
-        attn_dist = torch.softmax(scores, dim=0) * mask_tensor
-        content_vector = (attn_dist * encoder_outputs).sum(0)
+        align_weight = torch.softmax(scores, dim=0) * mask_tensor
+        content_vector = (align_weight * encoder_outputs).sum(0)
         concat = torch.cat((content_vector, decoder_hx), 1)
         hx_attention = torch.tanh(self.linear(concat))
         return hx_attention
