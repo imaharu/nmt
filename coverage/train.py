@@ -37,20 +37,30 @@ if __name__ == '__main__':
     val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
     opts = { "bidirectional" : args.none_bid, "coverage_vector": args.coverage }
     model = EncoderDecoder(source_size, target_size, opts).cuda(device=device)
-    print(model)
+    if args.set_state:
+        optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
+        set_epoch = 0
+    else:
+        checkpoint = torch.load("trained_model/{}".format(str(args.model_path)))
+        epochs -= checkpoint['epoch']
+        set_epoch = checkpoint['epoch']
+        model.load_state_dict(checkpoint['state_dict'])
+        optimizer = torch.optim.Adam( model.parameters())
+        optimizer.load_state_dict(checkpoint['optimizer'])
+
     model.train()
-    optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
+    print(model)
 
     max_score = 0
     score = 0
-
     save_model_dir = "{}/{}".format("trained_model", args.save_path)
     best_model_dir = "{}/{}".format("trained_model", "best-model")
 
     calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
     for epoch in range(epochs):
-        print("epoch",epoch + 1)
+        real_epoch = epoch + set_epoch + 1
+        print("epoch", real_epoch)
         tqdm_desc = "[Epoch{:>3}]".format(epoch + 1)
         tqdm_bar_format = "{l_bar}{bar}|{n_fmt}/{total_fmt} [{elapsed}<{remaining}]"
         tqdm_kwargs = {'desc': tqdm_desc, 'smoothing': 0.1, 'ncols': 100,
@@ -71,8 +81,17 @@ if __name__ == '__main__':
 #            max_score = score
 #            best_model_filename = "{}-epoch{}{}".format(save_model_dir, str(epoch + 1),".model")
 #            torch.save(model.state_dict(), best_model_filename)
-        if (epoch + 1) == args.epoch or (epoch + 1) % 2 == 0 and args.mode == "train":
-            save_model_filename = save_model_dir + str(epoch + 1) + ".model"
-            torch.save(model.state_dict(), save_model_filename)
+
+        if (real_epoch) == args.epoch or (real_epoch) % 2 == 0 and args.mode == "train":
+            if not os.path.exists(save_model_dir):
+                os.mkdir(save_model_dir)
+            save_model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))
+            states = {
+                'epoch': real_epoch,
+                'state_dict': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+            }
+            torch.save(states, save_model_filename)
+
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

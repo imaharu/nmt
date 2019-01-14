@@ -38,6 +38,8 @@ parser.add_argument('--save_path', '-s' , type=str, default="train")
 parser.add_argument('--is_short_data', '-d' , type=int, default=True,
                     help='short: vocab20000, long: vocab100000')
 
+parser.add_argument('--set_state', action='store_false')
+
 parser.add_argument('--none_bid', action='store_false')
 parser.add_argument('--coverage', action='store_true')
 args = parser.parse_args()

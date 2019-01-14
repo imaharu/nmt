@@ -9,3 +9,4 @@ vocab/*vocab
 pred.txt
 cell.txt
 .nfs*
+trained_model*
