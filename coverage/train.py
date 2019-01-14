@@ -71,7 +71,7 @@ if __name__ == '__main__':
 #            max_score = score
 #            best_model_filename = "{}-epoch{}{}".format(save_model_dir, str(epoch + 1),".model")
 #            torch.save(model.state_dict(), best_model_filename)
-        if (epoch + 1) == args.epoch and args.mode == "train":
+        if (epoch + 1) == args.epoch or (epoch + 1) % 2 == 0 and args.mode == "train":
             save_model_filename = save_model_dir + str(epoch + 1) + ".model"
             torch.save(model.state_dict(), save_model_filename)
         elapsed_time = time.time() - start

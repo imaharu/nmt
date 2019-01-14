@@ -27,7 +27,6 @@ class EncoderDecoder(nn.Module):
                     words_f, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
                 loss += F.cross_entropy(
                    self.decoder.linear(final_dist), words_t , ignore_index=0)
-
                 if self.opts["coverage_vector"]:
                     align_weight = align_weight.squeeze()
                     coverage_vector = coverage_vector.squeeze()

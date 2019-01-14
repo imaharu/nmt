@@ -29,8 +29,7 @@ class Attention(nn.Module):
         self.W_s = nn.Linear(hidden_size, hidden_size)
         self.v = nn.Linear(hidden_size, 1)
         self.linear = nn.Linear(hidden_size * 2, hidden_size)
-        if self.opts["coverage_vector"]:
-            self.coverage = Coverage()
+        self.coverage = Coverage()
 
     def forward(self, decoder_hx, encoder_outputs, encoder_features, coverage_vector, mask_tensor):
         t_k, b, n = list(encoder_outputs.size())
