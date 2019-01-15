@@ -74,24 +74,21 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-#        score = calc_blue.GetBlueScore(model)
-#        print("mac_score: {}".format(max_score))
-#        print("score: {}".format(score))
-#        if max_score < score:
-#            max_score = score
-#            best_model_filename = "{}-epoch{}{}".format(save_model_dir, str(epoch + 1),".model")
-#            torch.save(model.state_dict(), best_model_filename)
+        score = calc_blue.GetBlueScore(model)
+        print("max_score: {}".format(max_score))
+        print("score: {}".format(score))
 
-        if (real_epoch) == args.epoch or (real_epoch) % 2 == 0 and args.mode == "train":
+        if max_score < score and args.mode == "train":
             if not os.path.exists(save_model_dir):
                 os.mkdir(save_model_dir)
-            save_model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))
+            max_score = score
+            best_model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))
             states = {
                 'epoch': real_epoch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
             }
-            torch.save(states, save_model_filename)
+            torch.save(states, best_model_filename)
 
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")
