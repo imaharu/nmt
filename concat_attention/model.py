@@ -15,12 +15,10 @@ class EncoderDecoder(nn.Module):
         self.attention = Attention(hidden_size)
 
     def forward(self, source=None, target=None, train=False, phase=0):
+        encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
+        mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
         if train:
             loss = 0
-            encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-
-            # mask
-            mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
             for words_f, words_t in zip(target[:-1],  target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
@@ -30,8 +28,6 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
-            mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
             result = []
             loop = 0
