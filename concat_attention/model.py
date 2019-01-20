@@ -28,15 +28,36 @@ class EncoderDecoder(nn.Module):
             return loss
 
         elif phase == 1:
-            word_id = torch.tensor( [ target_dict["[START]"] ] ).cuda()
-            result = []
-            loop = 0
-            while True:
-                hx , cx = self.decoder(word_id, hx, cx)
-                hx_new = self.attention(hx, encoder_outputs, encoder_feature , mask_tensor)
-                word_id = torch.tensor([ torch.argmax(F.softmax(self.decoder.linear(hx_new), dim=1).data[0]) ]).cuda()
-                loop += 1
-                if loop >= 50 or int(word_id) == target_dict['[STOP]']:
-                    break
-                result.append(word_id)
+            k = 3 # beam_size
+            self.encoder_outputs = encoder_outputs.expand(-1, k, hidden_size)
+            self.encoder_feature = encoder_feature.expand(-1, k, hidden_size)
+            self.mask_tensor = mask_tensor
+            hx = hx.expand(k, hidden_size)
+            cx = cx.expand(k, hidden_size)
+            word_ids = torch.tensor( [ target_dict["[START]"]] * k).cuda()
+            top_k_scores = torch.zeros(k, 1).cuda()
+            top_k_sentences = []
+            step = 0
+            top_sentences = self.beam_search(top_k_scores, top_k_sentences, word_ids, hx, cx, k, step)
+            print("pass")
+            exit()
             return result
+
+    def getscores(self, top_k_words, hx, cx):
+        hx, cx = self.decoder(top_k_words, hx, cx)
+        hx_new = self.attention(hx, self.encoder_outputs, self.encoder_feature, self.mask_tensor)
+        scores = F.log_softmax(self.decoder.linear(hx_new), dim=1)
+        return hx, cx, scores
+
+    def beam_search(self, top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step):
+        if step == 4:
+            return top_k_sentences
+        hx, cx, scores = self.getscores(top_k_words, hx, cx)
+        # scoreの合計値が高い上位k個を取るため
+        scores = top_k_scores.expand_as(scores) + scores
+        if step == 0:
+            top_k_scores, top_k_words = scores[0].topk(k)
+        else:
+            top_k_scores, top_k_words = scores.view(-1).topk(k)
+        top_k_scores = top_k_scores.unsqueeze(-1)
+        return self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step + 1)
