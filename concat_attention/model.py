@@ -50,7 +50,7 @@ class EncoderDecoder(nn.Module):
         return hx, cx, scores
 
     def beam_search(self, top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step):
-        if step == 4:
+        if step == 2:
             return top_k_sentences
         hx, cx, scores = self.getscores(top_k_words, hx, cx)
         # scoreの合計値が高い上位k個を取るため
@@ -59,5 +59,8 @@ class EncoderDecoder(nn.Module):
             top_k_scores, top_k_words = scores[0].topk(k)
         else:
             top_k_scores, top_k_words = scores.view(-1).topk(k)
+        # 以前のword_id
+        prev_words = top_k_words / len(target_dict)
+        top_k_words = top_k_words % len(target_dict)
         top_k_scores = top_k_scores.unsqueeze(-1)
         return self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step + 1)
