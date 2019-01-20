@@ -34,11 +34,11 @@ class EncoderDecoder(nn.Module):
             self.mask_tensor = mask_tensor
             hx = hx.expand(k, hidden_size)
             cx = cx.expand(k, hidden_size)
-            word_ids = torch.tensor( [ target_dict["[START]"]] * k).cuda()
+            top_k_words = torch.tensor( [ target_dict["[START]"]] * k).cuda()
             top_k_scores = torch.zeros(k, 1).cuda()
             top_k_sentences = []
             step = 0
-            top_sentences = self.beam_search(top_k_scores, top_k_sentences, word_ids, hx, cx, k, step)
+            top_k_sentences = self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step)
             print("pass")
             exit()
             return result
@@ -50,7 +50,7 @@ class EncoderDecoder(nn.Module):
         return hx, cx, scores
 
     def beam_search(self, top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step):
-        if step == 2:
+        if step == 10:
             return top_k_sentences
         hx, cx, scores = self.getscores(top_k_words, hx, cx)
         # scoreの合計値が高い上位k個を取るため
@@ -59,8 +59,12 @@ class EncoderDecoder(nn.Module):
             top_k_scores, top_k_words = scores[0].topk(k)
         else:
             top_k_scores, top_k_words = scores.view(-1).topk(k)
-        # 以前のword_id
-        prev_words = top_k_words / len(target_dict)
-        top_k_words = top_k_words % len(target_dict)
-        top_k_scores = top_k_scores.unsqueeze(-1)
+        # 以前のword_index
+        prev_word_indexs = top_k_words / len(target_dict)
+        next_word_indexs = top_k_words % len(target_dict)
+        incomplete_indexs = [index for index, next_word in enumerate(next_word_indexs) if next_word != target_dict['[STOP]']]
+        hx = hx[prev_word_indexs[incomplete_indexs]]
+        cx = cx[prev_word_indexs[incomplete_indexs]]
+        top_k_scores = top_k_scores[incomplete_indexs].unsqueeze(1)
+        top_k_words = next_word_indexs[incomplete_indexs]
         return self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step + 1)
