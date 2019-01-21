@@ -38,7 +38,11 @@ class EncoderDecoder(nn.Module):
             top_k_scores = torch.zeros(k, 1).cuda()
             top_k_sentences = []
             step = 0
-            top_k_sentences = self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step)
+            self.seqs = top_k_words.unsqueeze(1)
+            self.completed_seqs = list()
+            self.completed_seqs_scores = list()
+            completed_seqs, completed_seqs_scores = self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step)
+            print(completed_seqs)
             print("pass")
             exit()
             return result
@@ -50,8 +54,8 @@ class EncoderDecoder(nn.Module):
         return hx, cx, scores
 
     def beam_search(self, top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step):
-        if step == 10:
-            return top_k_sentences
+        if step == 5:
+            return self.completed_seqs, self.completed_seqs_scores
         hx, cx, scores = self.getscores(top_k_words, hx, cx)
         # scoreの合計値が高い上位k個を取るため
         scores = top_k_scores.expand_as(scores) + scores
@@ -62,7 +66,16 @@ class EncoderDecoder(nn.Module):
         # 以前のword_index
         prev_word_indexs = top_k_words / len(target_dict)
         next_word_indexs = top_k_words % len(target_dict)
+        self.seqs = torch.cat((self.seqs[prev_word_indexs], next_word_indexs.unsqueeze(1)), dim=1)
         incomplete_indexs = [index for index, next_word in enumerate(next_word_indexs) if next_word != target_dict['[STOP]']]
+        complete_indexs = list(set(range(len(next_word_indexs))) - set(incomplete_indexs))
+        if len(complete_indexs) > 0:
+            self.completed_seqs.extend(self.seqs[complete_indexs].tolist())
+            self.completed_seqs_scores.extend(top_k_scores[complete_indexs])
+
+        if len(complete_indexs) == k:
+            return self.completed_seqs, self.completed_seqs_scores
+        self.seqs = self.seqs[incomplete_indexs]
         hx = hx[prev_word_indexs[incomplete_indexs]]
         cx = cx[prev_word_indexs[incomplete_indexs]]
         top_k_scores = top_k_scores[incomplete_indexs].unsqueeze(1)
