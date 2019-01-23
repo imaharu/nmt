@@ -15,7 +15,7 @@ class EncoderDecoder(nn.Module):
         self.attention = Attention(hidden_size)
 
     def forward(self, source=None, target=None, train=False, phase=0):
-        encoder_outputs , encoder_feature , hx, cx = self.encoder(source)
+        encoder_outputs, encoder_feature, hx, cx = self.encoder(source)
         mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
         if train:
             loss = 0
@@ -29,23 +29,26 @@ class EncoderDecoder(nn.Module):
 
         elif phase == 1:
             k = 3 # beam_size
-            self.encoder_outputs = encoder_outputs.expand(-1, k, hidden_size)
-            self.encoder_feature = encoder_feature.expand(-1, k, hidden_size)
             self.mask_tensor = mask_tensor
             hx = hx.expand(k, hidden_size)
             cx = cx.expand(k, hidden_size)
-            top_k_words = torch.tensor( [ target_dict["[START]"]] * k).cuda()
-            top_k_scores = torch.zeros(k, 1).cuda()
-            top_k_sentences = []
-            step = 0
-            self.seqs = top_k_words.unsqueeze(1)
-            self.completed_seqs = list()
-            self.completed_seqs_scores = list()
-            completed_seqs, completed_seqs_scores = self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step)
-            print(completed_seqs)
-            print("pass")
-            exit()
-            return result
+            max_step = 50
+            finish_sentences, finish_scores = self.beam_search(hx, cx, k, max_step, encoder_outputs, encoder_feature)
+            new_completed_scores = list()
+            for seq, score in zip(finish_sentences, finish_scores):
+                length_penalty = 0.6
+                ln = len(seq) - 1
+                lp = ((5 + ln) ** length_penalty) / ((5 + 1) ** length_penalty)
+                new_completed_scores.append(score/lp)
+            index = new_completed_scores.index(max(new_completed_scores))
+            best_summary = finish_sentences[index][1:]
+            best_summary = self.eos_truncate(best_summary, target_dict["[STOP]"])
+            return best_summary
+
+    def eos_truncate(self, labels, eos_label):
+        if (labels == eos_label).nonzero().size(0):
+            labels = labels.narrow(0, 0, (labels == eos_label).nonzero().item())
+        return labels
 
     def getscores(self, top_k_words, hx, cx):
         hx, cx = self.decoder(top_k_words, hx, cx)
@@ -53,31 +56,47 @@ class EncoderDecoder(nn.Module):
         scores = F.log_softmax(self.decoder.linear(hx_new), dim=1)
         return hx, cx, scores
 
-    def beam_search(self, top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step):
-        if step == 5:
-            return self.completed_seqs, self.completed_seqs_scores
-        hx, cx, scores = self.getscores(top_k_words, hx, cx)
-        # scoreの合計値が高い上位k個を取るため
-        scores = top_k_scores.expand_as(scores) + scores
-        if step == 0:
-            top_k_scores, top_k_words = scores[0].topk(k)
-        else:
-            top_k_scores, top_k_words = scores.view(-1).topk(k)
-        # 以前のword_index
-        prev_word_indexs = top_k_words / len(target_dict)
-        next_word_indexs = top_k_words % len(target_dict)
-        self.seqs = torch.cat((self.seqs[prev_word_indexs], next_word_indexs.unsqueeze(1)), dim=1)
-        incomplete_indexs = [index for index, next_word in enumerate(next_word_indexs) if next_word != target_dict['[STOP]']]
-        complete_indexs = list(set(range(len(next_word_indexs))) - set(incomplete_indexs))
-        if len(complete_indexs) > 0:
-            self.completed_seqs.extend(self.seqs[complete_indexs].tolist())
-            self.completed_seqs_scores.extend(top_k_scores[complete_indexs])
+    def beam_search(self, hx, cx, k, max_step, encoder_outputs, encoder_feature):
+        self.encoder_outputs = encoder_outputs.expand(-1, k, hidden_size)
+        self.encoder_feature = encoder_feature.expand(-1, k, hidden_size)
+        words = torch.tensor( [ target_dict["[START]"]] * k).cuda()
+        top_k_scores = torch.zeros(k, 1).cuda()
+        finish_sentences = []
+        finish_scores = []
+        seqs = words.unsqueeze(1)
+        for step in range(max_step):
+            hx, cx, scores = self.getscores(words, hx, cx)
+            # scoreの合計値が高い上位k個を取るため
+            scores = top_k_scores.expand_as(scores) + scores
+            if step == 0:
+                top_k_scores, top_k_words = scores[0].topk(k)
+            else:
+                top_k_scores, top_k_words = scores.view(-1).topk(k)
+            next_word_indexs = top_k_words % len(target_dict)
+            prev_word_indexs = top_k_words / len(target_dict)
+            seqs = torch.cat((seqs[prev_word_indexs], next_word_indexs.unsqueeze(1)), dim=1)
 
-        if len(complete_indexs) == k:
-            return self.completed_seqs, self.completed_seqs_scores
-        self.seqs = self.seqs[incomplete_indexs]
-        hx = hx[prev_word_indexs[incomplete_indexs]]
-        cx = cx[prev_word_indexs[incomplete_indexs]]
-        top_k_scores = top_k_scores[incomplete_indexs].unsqueeze(1)
-        top_k_words = next_word_indexs[incomplete_indexs]
-        return self.beam_search(top_k_scores, top_k_sentences, top_k_words, hx, cx, k, step + 1)
+            incomplete_indexs = [index for index, next_word in enumerate(next_word_indexs) if next_word != target_dict['[STOP]']]
+
+            ## eos ##
+            if torch.nonzero(next_word_indexs.eq(target_dict['[STOP]'])).size(0):
+                for score in top_k_scores.masked_select(next_word_indexs.eq(target_dict['[STOP]'])).unsqueeze(1):
+                    finish_scores.append(score.item())
+                for finish_sentence in seqs[next_word_indexs.eq(target_dict['[STOP]'])].unsqueeze(1):
+                    finish_sentences.append(finish_sentence.squeeze())
+            ### 終了条件 ###
+            if step == max_step or len(finish_scores) == k:
+                break
+            seqs = seqs[incomplete_indexs]
+            hx = hx[prev_word_indexs[incomplete_indexs]]
+            cx = cx[prev_word_indexs[incomplete_indexs]]
+            self.encoder_outputs = encoder_outputs.expand(-1, k - len(finish_scores), hidden_size)
+            self.encoder_feature = encoder_feature.expand(-1, k - len(finish_scores), hidden_size)
+            top_k_scores = top_k_scores[incomplete_indexs].unsqueeze(1)
+            words = next_word_indexs[prev_word_indexs[incomplete_indexs]]
+        if len(finish_scores) == 0:
+            for score in top_k_scores.unsqueeze(1):
+                finish_scores.append(score.item())
+            for finish_sentence in seqs.unsqueeze(1):
+                finish_sentences.append(finish_sentence.squeeze())
+        return finish_sentences, finish_scores
