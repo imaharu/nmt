@@ -33,9 +33,8 @@ if __name__ == '__main__':
     data_set = MyDataset(train_source, train_target)
     train_iter = DataLoader(data_set, batch_size=batch_size, collate_fn=data_set.collater, shuffle=True)
 
-    val_set = EvaluateDataset(val_source)
-    val_iter = DataLoader(val_set, batch_size=1, collate_fn=val_set.collater)
     opts = { "bidirectional" : args.none_bid, "coverage_vector": args.coverage }
+    print(opts)
     model = EncoderDecoder(source_size, target_size, opts).cuda(device=device)
     if args.set_state:
         optimizer = torch.optim.Adam( model.parameters(), lr=1e-3, weight_decay=1e-6)
@@ -51,12 +50,7 @@ if __name__ == '__main__':
     model.train()
     print(model)
 
-    max_score = 0
-    score = 0
     save_model_dir = "{}/{}".format("trained_model", args.save_path)
-    best_model_dir = "{}/{}".format("trained_model", "best-model")
-
-    calc_blue = Evaluate(target_dict, val=1, gold_sentence_file=val_ja, val_iter=val_iter)
 
     for epoch in range(epochs):
         real_epoch = epoch + set_epoch + 1
@@ -74,21 +68,16 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-        score = calc_blue.GetBlueScore(model)
-        print("max_score: {}".format(max_score))
-        print("score: {}".format(score))
-
-        if max_score < score and args.mode == "train":
+        if real_epoch == epochs and args.mode == "train":
             if not os.path.exists(save_model_dir):
                 os.mkdir(save_model_dir)
-            max_score = score
-            best_model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))
+            model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))
             states = {
                 'epoch': real_epoch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
             }
-            torch.save(states, best_model_filename)
+            torch.save(states, model_filename)
 
         elapsed_time = time.time() - start
         print("時間:",elapsed_time / 60.0, "分")

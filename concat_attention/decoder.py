@@ -9,13 +9,20 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
         self.embed_target = nn.Embedding(target_size, embed_size, padding_idx=0)
         self.drop_target = nn.Dropout(p=0.2)
-        self.lstm_target = nn.LSTMCell(embed_size, hidden_size)
+        self.lstm = nn.LSTMCell(embed_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
     def forward(self, target_words, hx, cx):
         embed = self.embed_target(target_words)
         embed = self.drop_target(embed)
-        hx, cx = self.lstm_target(embed, (hx, cx) )
+        if torch.nonzero(summary_words.eq(0)).size(0):
+            before_w_hx , before_w_cx = w_hx, w_cx
+            mask = torch.cat( [ summary_words.unsqueeze(-1) ] * hidden_size, 1)
+            w_hx, w_cx = self.lstm(embed, (w_hx, w_cx) )
+            w_hx = torch.where(mask == 0, before_w_hx, w_hx)
+            w_cx = torch.where(mask == 0, before_w_cx, w_cx)
+        else:
+            w_hx, w_cx = self.lstm(embed, (w_hx, w_cx) )
         return hx, cx
 
 class Attention(nn.Module):
