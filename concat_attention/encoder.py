@@ -14,12 +14,6 @@ class Encoder(nn.Module):
         self.W_h = nn.Linear(hidden_size, hidden_size)
 
     def forward(self, sentences):
-        '''
-            return
-                encoder_ouput, hx, cx
-            option
-                bidirectional
-        '''
         b = sentences.size(0)
         input_lengths = torch.tensor(
             [seq.size(-1) for seq in sentences])

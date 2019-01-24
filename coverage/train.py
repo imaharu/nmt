@@ -55,7 +55,7 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         real_epoch = epoch + set_epoch + 1
         print("epoch", real_epoch)
-        tqdm_desc = "[Epoch{:>3}]".format(epoch + 1)
+        tqdm_desc = "[Epoch{:>3}]".format(real_epoch)
         tqdm_bar_format = "{l_bar}{bar}|{n_fmt}/{total_fmt} [{elapsed}<{remaining}]"
         tqdm_kwargs = {'desc': tqdm_desc, 'smoothing': 0.1, 'ncols': 100,
                     'bar_format': tqdm_bar_format, 'leave': False}
@@ -68,7 +68,7 @@ if __name__ == '__main__':
             torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()
 
-        if real_epoch == epochs and args.mode == "train":
+        if args.mode == "train":
             if not os.path.exists(save_model_dir):
                 os.mkdir(save_model_dir)
             model_filename = "{}/epoch-{}.model".format(save_model_dir, str(real_epoch))

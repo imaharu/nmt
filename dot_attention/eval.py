@@ -24,5 +24,6 @@ if __name__ == '__main__':
         pred = model(source=iters.cuda(), phase=1)
         sentence = Evaluate.TranslateSentence(pred)
         sentence = ' '.join(sentence)
+        print(sentence)
         pred_file.write(sentence + '\n')
     pred_file.close

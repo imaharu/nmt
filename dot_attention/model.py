@@ -17,7 +17,6 @@ class EncoderDecoder(nn.Module):
             loss = 0
             target = target.t()
             encoder_outputs , hx, cx = self.encoder(source)
-
             mask_tensor = source.t().eq(PADDING).unsqueeze(-1)
             for words_f, words_t in zip(target[:-1] , target[1:]):
                 hx, cx = self.decoder(words_f, hx, cx)
@@ -46,8 +45,8 @@ class Encoder(nn.Module):
     def __init__(self, source_size, hidden_size, opts):
         super(Encoder, self).__init__()
         self.opts = opts
-        self.embed_source = nn.Embedding(source_size, hidden_size, padding_idx=0)
-        self.drop_source = nn.Dropout(p=0.2)
+        self.embed = nn.Embedding(source_size, hidden_size, padding_idx=0)
+        self.drop = nn.Dropout(p=0.2)
         self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True, bidirectional=self.opts["bidirectional"])
 
     def forward(self, sentences):
@@ -58,10 +57,9 @@ class Encoder(nn.Module):
                 bidirectional
         '''
         b = sentences.size(0)
-        input_lengths = torch.tensor(
-            [seq.size(-1) for seq in sentences])
-        embed = self.embed_source(sentences)
-        embed = self.drop_source(embed)
+        input_lengths = sentences.ne(0).sum(-1)
+        embed = self.embed(sentences)
+        embed = self.drop(embed)
         sequence = rnn.pack_padded_sequence(embed, input_lengths, batch_first=True)
 
         packed_output, (hx, cx) = self.lstm(sequence)
@@ -79,15 +77,22 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
-        self.embed_target = nn.Embedding(target_size, hidden_size, padding_idx=0)
-        self.drop_target = nn.Dropout(p=0.2)
-        self.lstm_target = nn.LSTMCell(hidden_size, hidden_size)
+        self.embed = nn.Embedding(target_size, hidden_size, padding_idx=0)
+        self.drop = nn.Dropout(p=0.2)
+        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
     def forward(self, target_words, hx, cx):
-        embed = self.embed_target(target_words)
-        embed = self.drop_target(embed)
-        hx, cx = self.lstm_target(embed, (hx, cx) )
+        embed = self.embed(target_words)
+        embed = self.drop(embed)
+        if torch.nonzero(target_words.eq(0)).size(0):
+            before_hx, before_cx = hx, cx
+            mask = torch.cat( [ target_words.unsqueeze(-1) ] * hidden_size, 1)
+            hx, cx = self.lstm(embed, (hx, cx) )
+            hx = torch.where(mask == 0, before_hx, hx)
+            cx = torch.where(mask == 0, before_cx, cx)
+        else:
+            hx, cx = self.lstm(embed, (hx, cx) )
         return hx, cx
 
 class Attention(nn.Module):

@@ -35,7 +35,7 @@ parser.add_argument('--result_path', '-r' ,type=str)
 parser.add_argument('--model_path', '-m' , type=str)
 parser.add_argument('--save_path', '-s' , type=str, default="train")
 
-parser.add_argument('--is_short_data', '-d' , type=int, default=True,
+parser.add_argument('--is_short_data', '-d' , action='store_false',
                     help='short: vocab20000, long: vocab100000')
 
 parser.add_argument('--set_state', action='store_false')
@@ -51,8 +51,8 @@ if args.is_short_data:
     source_vocab = "vocab/source_20000vocab"
     target_vocab = "vocab/target_20000vocab"
 else:
-    train_en = "../train_data/100000train.en"
-    train_ja = "../train_data/100000train.ja"
+    train_en = "../train_data/100000.train.en"
+    train_ja = "../train_data/100000.train.ja"
     source_vocab = "vocab/source_vocab"
     target_vocab = "vocab/target_vocab"
 
