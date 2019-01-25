@@ -37,6 +37,9 @@ parser.add_argument('--save_path', '-s' , type=str, default="train")
 
 parser.add_argument('--is_short_data', '-d' , type=int, default=True,
                     help='short: vocab20000, long: vocab100000')
+parser.add_argument('--set_state', action='store_false')
+parser.add_argument('--none_bid', action='store_false')
+parser.add_argument('--coverage', action='store_true')
 args = parser.parse_args()
 
 ##### end #####
@@ -61,9 +64,8 @@ target_size = len(target_dict)
 
 hidden_size = args.hidden_size
 embed_size = args.embed_size
-epoch = args.epoch
+epochs = args.epoch
 batch_size = args.batch_size
-
 if args.mode == "debug":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
@@ -72,7 +74,6 @@ if args.mode == "debug":
 elif args.mode == "train":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
-    val_source = pre_data.load(val_en, 0, source_dict)
 elif args.mode == "val":
     batch_size = 1
     val_en = "../train_data/devtest.en"

@@ -26,5 +26,5 @@ if __name__ == '__main__':
         sentence = model(source=iters.cuda(), generate=True)
         sentence = Evaluate.TranslateSentence(sentence)
         sentence = ' '.join(sentence)
-        pred_file.write(sentence + '\n')
-    generate.close
+        generate_file.write(sentence + '\n')
+    generate_file.close

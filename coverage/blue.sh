@@ -1,4 +1,4 @@
 #!/bin/sh
-correct="../train_data/eval.ja"
-output="trained_model/$1"
+correct="../train_data/$1"
+output="trained_model/$2"
 ~/smt/mosesdecoder/scripts/generic/multi-bleu.perl $correct < $output
