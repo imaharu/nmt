@@ -52,9 +52,6 @@ else:
     source_vocab = "vocab/source_vocab"
     target_vocab = "vocab/target_vocab"
 
-val_en = "../train_data/val.en"
-val_ja = "../train_data/val.ja"
-
 pre_data = Preprocess()
 source_dict = pre_data.getVocab(source_vocab)
 target_dict = pre_data.getVocab(target_vocab)
@@ -62,29 +59,25 @@ target_dict = pre_data.getVocab(target_vocab)
 source_size = len(source_dict)
 target_size = len(target_dict)
 
+hidden_size = args.hidden_size
+embed_size = args.embed_size
+epoch = args.epoch
+batch_size = args.batch_size
+
 if args.mode == "debug":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
-    val_source = pre_data.load(val_en, 0, source_dict)
     train_source = train_source[:6]
     train_target = train_target[:6]
-    val_source = val_source[:3]
-    hidden_size = 2
-    embed_size = 4
-    batch_size = 3
-    epoch = 2
-
 elif args.mode == "train":
     train_source = pre_data.load(train_en , 0, source_dict)
     train_target = pre_data.load(train_ja , 1, target_dict)
     val_source = pre_data.load(val_en, 0, source_dict)
-    hidden_size = args.hidden_size
-    embed_size = args.embed_size
-    batch_size = args.batch_size
-    epoch = args.epoch
-elif args.mode == "eval":
+elif args.mode == "val":
     batch_size = 1
-    hidden_size = args.hidden_size
-    embed_size = args.embed_size
-    test_en = "../train_data/eval.en"
-    test_source = pre_data.load(test_en , 0, source_dict)
+    val_en = "../train_data/devtest.en"
+    generate_source = pre_data.load(val_en , 0, source_dict)
+elif args.mode == "test":
+    batch_size = 1
+    test_en = "../train_data/test.en"
+    generate_source = pre_data.load(test_en , 0, source_dict)

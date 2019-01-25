@@ -15,14 +15,14 @@ if __name__ == '__main__':
     state_dict = torch.load('trained_model/' + str(args.model_path))
     model.load_state_dict(state_dict)
     model.eval()
-    data_set = EvaluateDataset(test_source)
+    data_set = EvaluateDataset(generate_source)
     eval_iter = DataLoader(data_set, batch_size=1, collate_fn=data_set.collater)
 
     Evaluate = Evaluate(target_dict)
-    pred_file = open(str(args.result_path), 'w', encoding="utf-8")
+    generate_file = open(str(args.result_path), 'w', encoding="utf-8")
     for iters in eval_iter:
         pred = model(source=iters.cuda(), phase=1)
         sentence = Evaluate.TranslateSentence(pred)
         sentence = ' '.join(sentence)
-        pred_file.write(sentence + '\n')
-    pred_file.close
+        generate_file.write(sentence + '\n')
+    generate_file.close
