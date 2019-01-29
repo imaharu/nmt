@@ -11,13 +11,18 @@ class Decoder(nn.Module):
         self.attention = Attention(opts)
         self.embed = nn.Embedding(target_size, embed_size, padding_idx=0)
         self.drop = nn.Dropout(p=0.2)
+        #self.lstm = nn.LSTM(embed_size, hidden_size, args.num_layers)
         self.lstm = nn.LSTMCell(embed_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
     def forward(self, t_input, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor):
+        #embed = self.embed(t_input.unsqueeze(0))
         embed = self.embed(t_input)
         embed = self.drop(embed)
+        #_, (hx, cx) = self.lstm(embed, (hx, cx) )
         hx, cx = self.lstm(embed, (hx, cx) )
+        #final_dist, align_weight, next_coverage_vector = self.attention(
+        #        hx[args.num_layers - 1], encoder_outputs, encoder_features, coverage_vector, mask_tensor)
         final_dist, align_weight, next_coverage_vector = self.attention(
                 hx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
         return final_dist, hx, cx, align_weight, next_coverage_vector

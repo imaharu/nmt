@@ -16,17 +16,15 @@ class EncoderDecoder(nn.Module):
     def forward(self, source=None, target=None, train=False, generate=False):
         if train:
             loss = 0
-            encoder_outputs , encoder_features , hx, cx = self.encoder(source)
-
-            # mask
+            encoder_outputs, encoder_features, hx, cx = self.encoder(source)
             mask_tensor = source.t().gt(PADDING).unsqueeze(-1).float().cuda()
             target = target.t()
             coverage_vector = torch.zeros(source.t().size()).unsqueeze(-1).cuda()
-            for words_f, words_t in zip(target[:-1],  target[1:]):
+            for words_f, words_t in zip(target[:-1], target[1:]):
                 final_dist, hx, cx, align_weight, next_coverage_vector = self.decoder(
                     words_f, hx, cx, encoder_outputs, encoder_features, coverage_vector, mask_tensor)
                 loss += F.cross_entropy(
-                   self.decoder.linear(final_dist), words_t , ignore_index=0)
+                   self.decoder.linear(final_dist), words_t, ignore_index=0)
                 if self.opts["coverage_vector"]:
                     align_weight = align_weight.squeeze()
                     coverage_vector = coverage_vector.squeeze()

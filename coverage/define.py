@@ -30,6 +30,7 @@ parser.add_argument('--hidden_size', type=int, default=256,
                     help='number of hidden units')
 parser.add_argument('--batch_size', '-b', type=int, default=100,
                     help='Number of batchsize')
+parser.add_argument('--num_layers', '-n', type=int, default=1)
 
 parser.add_argument('--result_path', '-r' ,type=str)
 parser.add_argument('--model_path', '-m' , type=str)
