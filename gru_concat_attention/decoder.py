@@ -7,16 +7,16 @@ import torch.nn.utils.rnn as rnn
 class Decoder(nn.Module):
     def __init__(self, target_size, hidden_size):
         super(Decoder, self).__init__()
-        self.embed_target = nn.Embedding(target_size, embed_size, padding_idx=0)
-        self.drop_target = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTMCell(embed_size, hidden_size)
+        self.embed = nn.Embedding(target_size, embed_size, padding_idx=0)
+        self.drop = nn.Dropout(p=0.2)
+        self.gru = nn.GRUCell(embed_size, hidden_size)
         self.linear = nn.Linear(hidden_size, target_size)
 
-    def forward(self, target_words, hx, cx):
-        embed = self.embed_target(target_words)
-        embed = self.drop_target(embed)
-        w_hx, w_cx = self.lstm(embed, (hx, cx) )
-        return hx, cx
+    def forward(self, target_words, hx):
+        embed = self.embed(target_words)
+        embed = self.drop(embed)
+        hx = self.gru(embed, hx)
+        return hx
 
 class Attention(nn.Module):
     def __init__(self, hidden_size):

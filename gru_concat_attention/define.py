@@ -34,7 +34,7 @@ parser.add_argument('--batch_size', '-b', type=int, default=100,
 parser.add_argument('--result_path', '-r' ,type=str)
 parser.add_argument('--model_path', '-m' , type=str)
 parser.add_argument('--save_path', '-s' , type=str, default="train")
-
+parser.add_argument('--cuda', '-c' , type=str, default="0")
 parser.add_argument('--is_short_data', '-d' , type=int, default=True,
                     help='short: vocab20000, long: vocab100000')
 args = parser.parse_args()
@@ -80,3 +80,4 @@ elif args.mode == "test":
     batch_size = 1
     test_en = "../train_data/test.en"
     generate_source = pre_data.load(test_en , 0, source_dict)
+os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda

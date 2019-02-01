@@ -41,7 +41,6 @@ if __name__ == '__main__':
     score = 0
 
     save_model_dir = "{}/{}".format("trained_model", args.save_path)
-    best_model_dir = "{}/{}".format("trained_model", "best-model")
 
     for epoch in range(args.epoch):
         print("epoch",epoch + 1)
